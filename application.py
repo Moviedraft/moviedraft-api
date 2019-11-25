@@ -22,7 +22,7 @@ login = LoginManager(app)
 
 @app.route('/')
 def index():
-    return 'index'
+    return 'This is the index page'
 
 @login.user_loader
 def load_user(username):
