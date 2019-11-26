@@ -9,8 +9,9 @@ import sys
 from flask import Flask
 from flask_login import LoginManager
 from models.User import User
-from routes.Login import login_blueprint
 from models.Database import mongo
+from routes.Login import login_blueprint
+from routes.Game import game_blueprint
 
 sys.path.insert(0, '/models/')
 sys.path.insert(1, '/routes/')
@@ -36,6 +37,7 @@ def load_user(username):
     return User(username=u['Username'])
 
 app.register_blueprint(login_blueprint)
+app.register_blueprint(game_blueprint)
 
 if __name__ == "__main__":
     app.run()
