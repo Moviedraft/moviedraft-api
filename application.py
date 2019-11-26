@@ -5,11 +5,15 @@ Created on Tue Nov 19 08:45:14 2019
 @author: Jason
 """
 
+import sys
 from flask import Flask
 from flask_login import LoginManager
-from User import User
-from Login import login_blueprint
-from Database import mongo
+from models.User import User
+from routes.Login import login_blueprint
+from models.Database import mongo
+
+sys.path.insert(0, '/models/')
+sys.path.insert(1, '/routes/')
 
 application = app = Flask(__name__, template_folder='templates')
 
