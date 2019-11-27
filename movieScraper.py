@@ -5,6 +5,12 @@ Created on Tue Nov 26 11:20:36 2019
 @author: Jason
 """
 
+# =============================================================================
+# Script requires two arguements to be passed when running:
+#     The connection string to MongoDB
+#     The file path for ChromeDriver
+# =============================================================================
+    
 class Movie:
     def __init__(self, releaseDate, title, releaseType, distributor, url):
         self.releaseDate = releaseDate
@@ -19,13 +25,12 @@ from pymongo import MongoClient
 from datetime import datetime
 import sys
 
-client = MongoClient('mongodb+srv://JasonK58:e7g3Xy5WwPSD1k5H@cluster0-mxtug.gcp.mongodb.net/MovieDraft?retryWrites=true&w=majority')
+client = MongoClient(sys.argv[1])
 
 options = webdriver.ChromeOptions()
 options.add_argument('headless')
 
-#First argument of the Chrome instantiator is the path to ChromeDriver.
-driver = webdriver.Chrome(sys.argv[1], options=options)
+driver = webdriver.Chrome(sys.argv[2], options=options)
 
 driver.get('https://www.the-numbers.com/movies/release-schedule')
 
@@ -43,7 +48,7 @@ for row in table.find_elements_by_xpath('.//tr'):
 
 for row in movieArray:
     if not all(' ' == entry for entry in row) and len(row) == 1:
-        year = row[0][row[0].find(', ')+2:]
+        releaseYear = row[0][row[0].find(', ')+2:]
         
     if not len(row) > 3:
         continue
@@ -53,18 +58,23 @@ for row in movieArray:
     else:
         row[0] = date
 
-    releaseDateString = row[0] + ', ' + year
-    releaseDate = datetime.strptime(releaseDateString, '%B %d, %Y')
-    releaseDateFormattedString = releaseDate.strftime('%Y-%m-%d')
-    properReleaseDate = datetime.strptime(releaseDateFormattedString, '%Y-%m-%d')
-    
-    title = str.strip(row[1][0:row[1].find('(')])
-    releaseType = row[1][row[1].find('(')+1:row[1].find(')')]
-    
-    movieUrlElement = table.find_element_by_link_text(title)
+    releaseMonth = row[0][0:row[0].find(' ')]
+    releaseDay = row[0][row[0].find(' ')+1:]
+    releaseDateString = releaseYear + '-' + releaseMonth + '-' + releaseDay
+    try: 
+        releaseDate = datetime.strptime(releaseDateString, '%Y-%B-%d')
+    except ValueError:
+        releaseDate = datetime.max
+
+    title = str.strip(row[1][0:row[1].rfind('(')])
+    releaseType = row[1][row[1].rfind('(')+1:row[1].rfind(')')]
+    if releaseType == 'IMAX':
+        releaseType = 'Wide'
+    movieUrlElement = table.find_element_by_partial_link_text(title)
     url = movieUrlElement.get_property('href')
     
-    movie = Movie(properReleaseDate, title, releaseType, row[2], url)
+    movie = Movie(releaseDate, title, releaseType, row[2], url)
+    
     existingMovie = client.MovieDraft.Movies.find_one({"url": url})
     if existingMovie:
         client.MovieDraft.Movies.replace_one(existingMovie, movie.__dict__)
