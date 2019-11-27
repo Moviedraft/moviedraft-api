@@ -40,8 +40,6 @@ for row in table.find_elements_by_xpath('.//tr'):
     for td in row.find_elements_by_xpath('.//td'):
         x.append(td.text)
     movieArray.append(x)
-    if len(movieArray) == 10:
-        break
 
 for row in movieArray:
     if not all(' ' == entry for entry in row) and len(row) == 1:
