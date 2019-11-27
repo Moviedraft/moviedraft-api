@@ -20,7 +20,6 @@ class Movie:
         self.url = url
 
 from selenium import webdriver
-from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from datetime import datetime
 import sys
@@ -31,11 +30,8 @@ options = webdriver.ChromeOptions()
 options.add_argument('headless')
 
 driver = webdriver.Chrome(sys.argv[2], options=options)
-
 driver.get('https://www.the-numbers.com/movies/release-schedule')
 
-content = driver.page_source
-soup = BeautifulSoup(content, features='lxml')
 table = driver.find_element_by_xpath('//div[@id=\'page_filling_chart\']/table/tbody')
 
 movieArray = []
@@ -67,9 +63,11 @@ for row in movieArray:
         releaseDate = datetime.max
 
     title = str.strip(row[1][0:row[1].rfind('(')])
+    
     releaseType = row[1][row[1].rfind('(')+1:row[1].rfind(')')]
     if releaseType == 'IMAX':
         releaseType = 'Wide'
+        
     movieUrlElement = table.find_element_by_partial_link_text(title)
     url = movieUrlElement.get_property('href')
     
