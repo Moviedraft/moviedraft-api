@@ -32,10 +32,10 @@ def index():
 
 @login.user_loader
 def load_user(username):
-    u = mongo.db.Users.find_one({"Username": username})
+    u = mongo.db.users.find_one({"username": username})
     if not u:
         return None
-    return User(username=u['Username'])
+    return User(username=u['username'])
 
 app.register_blueprint(login_blueprint)
 app.register_blueprint(game_blueprint)
