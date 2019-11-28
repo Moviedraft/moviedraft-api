@@ -18,6 +18,7 @@ class Movie:
         self.releaseType = releaseType
         self.distributor = distributor
         self.url = url
+        self.lastUpdated = datetime.strptime(datetime.today().isoformat() , '%Y-%m-%dT%H:%M:%S.%f')     
 
 from selenium import webdriver
 from pymongo import MongoClient
@@ -25,11 +26,12 @@ from datetime import datetime
 import sys
 
 client = MongoClient(sys.argv[1])
+db = client.get_database(sys.argv[2])
 
 options = webdriver.ChromeOptions()
 options.add_argument('headless')
 
-driver = webdriver.Chrome(sys.argv[2], options=options)
+driver = webdriver.Chrome(sys.argv[3], options=options)
 driver.get('https://www.the-numbers.com/movies/release-schedule')
 
 table = driver.find_element_by_xpath('//div[@id=\'page_filling_chart\']/table/tbody')
@@ -73,10 +75,10 @@ for row in movieArray:
     
     movie = Movie(releaseDate, title, releaseType, row[2], url)
     
-    existingMovie = client.MovieDraft.Movies.find_one({"url": url})
+    existingMovie = db.movies.find_one({"url": url})
     if existingMovie:
-        client.MovieDraft.Movies.replace_one(existingMovie, movie.__dict__)
+        db.movies.replace_one(existingMovie, movie.__dict__)
         print('Replaced movie title: {}'.format(movie.title))
     else:
-        client.MovieDraft.Movies.insert_one(movie.__dict__)
+        db.movies.insert_one(movie.__dict__)
         print('Inserted movie title: {}'.format(movie.title))

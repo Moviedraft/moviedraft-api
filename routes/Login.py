@@ -18,9 +18,9 @@ def login():
     form = LoginForm()
     if request.method == 'POST' and form.validate_on_submit():
         print('got past the validate check')
-        user = mongo.db.Users.find_one({'Username': form.username.data})
-        if user and User.validate_login(user['Password'], form.password.data):
-          userObject = User(username=user['Username'])
+        user = mongo.db.users.find_one({'username': form.username.data})
+        if user and User.validate_login(user['password'], form.password.data):
+          userObject = User(username=user['username'])
           login_user(userObject)
           return 'You are logged in!'
         else:

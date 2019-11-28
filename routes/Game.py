@@ -15,20 +15,20 @@ game_blueprint = Blueprint('Game', __name__)
 
 @game_blueprint.route('/game', methods=['POST'])
 @login_required
-def CreateGame():
+def create_game():
     try:
         jsonDump = json.dumps(request.json)
         jsonData = json.loads(jsonDump)
         game = GameModel(
-                GameName=jsonData['GameName'], 
-                DollarSpendingCap=jsonData['DollarSpendingCap']
+                gameName=jsonData['gameName'], 
+                dollarSpendingCap=jsonData['dollarSpendingCap']
                 )
     except:
         return "Request is not valid JSON.", 400
 
     try:
-        if not GameModel.load_game(game.GameName):
-            result = mongo.db.Games.insert_one(game.__dict__)
+        if not GameModel.load_game(game.gameName):
+            result = mongo.db.games.insert_one(game.__dict__)
         else:
             return "Game with that name already exists.", 409
     except:
@@ -36,21 +36,21 @@ def CreateGame():
     
     return str(result.inserted_id), 200
 
-@game_blueprint.route('/game/<gamename>', methods=['GET'])
+@game_blueprint.route('/game/<gameName>', methods=['GET'])
 @login_required
-def GetGame(gamename):
-    game = GameModel.load_game(gamename)
+def get_game(gameName):
+    game = GameModel.load_game(gameName)
     if game:
         return game.__dict__, 200
-    return "Game name: \'{}\' could not be found.".format(gamename), 404
+    return "Game name: \'{}\' could not be found.".format(gameName), 404
 
-@game_blueprint.route('/game/<gamename>', methods=['DELETE'])
+@game_blueprint.route('/game/<gameName>', methods=['DELETE'])
 @login_required
-def DeleteGame(gamename):
-    game = GameModel.load_game(gamename)
+def delete_game(gameName):
+    game = GameModel.load_game(gameName)
     if game:
         try:
-            mongo.db.Games.delete_one({'GameName': game.GameName})
+            mongo.db.games.delete_one({'gameName': game.gameName})
             return "", 200
         except:
-            return "Game name: \'{}\' could not be deleted".format(gamename), 500
+            return "Game name: \'{}\' could not be deleted".format(gameName), 500
