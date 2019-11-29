@@ -11,9 +11,9 @@ import json
 from models.Database import mongo
 from models.GameModel import GameModel
 
-game_blueprint = Blueprint('Game', __name__)
+games_blueprint = Blueprint('Games', __name__)
 
-@game_blueprint.route('/game', methods=['POST'])
+@games_blueprint.route('/games', methods=['POST'])
 @login_required
 def create_game():
     try:
@@ -36,7 +36,7 @@ def create_game():
     
     return str(result.inserted_id), 200
 
-@game_blueprint.route('/game/<gameName>', methods=['GET'])
+@games_blueprint.route('/games/<gameName>', methods=['GET'])
 @login_required
 def get_game(gameName):
     game = GameModel.load_game(gameName)
@@ -44,7 +44,7 @@ def get_game(gameName):
         return game.__dict__, 200
     return "Game name: \'{}\' could not be found.".format(gameName), 404
 
-@game_blueprint.route('/game/<gameName>', methods=['DELETE'])
+@games_blueprint.route('/games/<gameName>', methods=['DELETE'])
 @login_required
 def delete_game(gameName):
     game = GameModel.load_game(gameName)

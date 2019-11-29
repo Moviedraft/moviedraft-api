@@ -12,10 +12,12 @@ from flask_login import LoginManager
 from models.User import User
 from models.Database import mongo
 from routes.Login import login_blueprint
-from routes.Game import game_blueprint
+from routes.Games import games_blueprint
+from routes.Movies import movies_blueprint
 
 sys.path.insert(0, '/models/')
 sys.path.insert(1, '/routes/')
+sys.path.insert(2, '/enums/')
 
 application = app = Flask(__name__, template_folder='templates')
 
@@ -38,7 +40,8 @@ def load_user(username):
     return User(username=u['username'])
 
 app.register_blueprint(login_blueprint)
-app.register_blueprint(game_blueprint)
+app.register_blueprint(games_blueprint)
+app.register_blueprint(movies_blueprint)
 
 if __name__ == "__main__":
     app.run()
