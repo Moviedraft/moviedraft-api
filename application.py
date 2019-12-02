@@ -51,4 +51,4 @@ app.register_blueprint(games_blueprint)
 app.register_blueprint(movies_blueprint)
 
 if __name__ == '__main__':
-    app.run(ssl_context="adhoc")
+    app.run()
