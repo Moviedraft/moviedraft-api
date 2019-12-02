@@ -7,8 +7,11 @@ Created on Tue Nov 19 10:03:06 2019
 from werkzeug.security import check_password_hash
 
 class User():
-    def __init__(self, username):
+    def __init__(self, username, name, email, profilePic):
         self.username = username
+        self.name = name
+        self.email = email
+        self.profilePic = profilePic
 
     @staticmethod
     def is_authenticated():
