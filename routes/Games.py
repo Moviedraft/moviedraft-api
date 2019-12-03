@@ -22,7 +22,10 @@ def create_game():
         game = GameModel(
                 gameName=jsonData['gameName'],
                 gameNameLowerCase=jsonData['gameName'].lower(),
-                dollarSpendingCap=jsonData['dollarSpendingCap']
+                playerBuyIn=jsonData['playerBuyIn'],
+                dollarSpendingCap=jsonData['dollarSpendingCap'],
+                movies=jsonData['movies'],
+                rules=jsonData['rules']
                 )
     except:
         abort(make_response(jsonify(message='Request is not valid JSON.'), 500))
