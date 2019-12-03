@@ -5,7 +5,7 @@ Created on Mon Nov 25 20:16:39 2019
 @author: Jason
 """
 
-from flask import Blueprint, request
+from flask import Blueprint, request, abort, make_response, jsonify
 from flask_login import login_required
 import json
 from models.Database import mongo
@@ -20,37 +20,36 @@ def create_game():
         jsonDump = json.dumps(request.json)
         jsonData = json.loads(jsonDump)
         game = GameModel(
-                gameName=jsonData['gameName'], 
+                gameName=jsonData['gameName'],
+                gameNameLowerCase=jsonData['gameName'].lower(),
                 dollarSpendingCap=jsonData['dollarSpendingCap']
                 )
     except:
-        return "Request is not valid JSON.", 400
-
-    try:
-        if not GameModel.load_game(game.gameName):
-            result = mongo.db.games.insert_one(game.__dict__)
-        else:
-            return "Game with that name already exists.", 409
-    except:
-        return "Game insert operation failed.", 500
+        abort(make_response(jsonify(message='Request is not valid JSON.'), 500))
     
+    if not GameModel.load_game(game.gameName.lower()) == None:
+        abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(game.gameName)), 409))
+        
+    result = mongo.db.games.insert_one(game.__dict__)
+
     return str(result.inserted_id), 200
 
 @games_blueprint.route('/games/<gameName>', methods=['GET'])
 @login_required
 def get_game(gameName):
-    game = GameModel.load_game(gameName)
+    game = GameModel.load_game(gameName.lower())
     if game:
         return game.__dict__, 200
-    return "Game name: \'{}\' could not be found.".format(gameName), 404
+    abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
 
 @games_blueprint.route('/games/<gameName>', methods=['DELETE'])
 @login_required
 def delete_game(gameName):
-    game = GameModel.load_game(gameName)
+    game = GameModel.load_game(gameName.lower())
     if game:
         try:
             mongo.db.games.delete_one({'gameName': game.gameName})
-            return "", 200
+            return '', 200
         except:
-            return "Game name: \'{}\' could not be deleted".format(gameName), 500
+            abort(make_response(jsonify('Game name: \'{}\' could not be deleted'.format(gameName)), 500))
+    abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
