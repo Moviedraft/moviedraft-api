@@ -5,6 +5,7 @@ Created on Tue Nov 19 10:03:06 2019
 @author: Jason
 """
 from werkzeug.security import check_password_hash
+from models.Database import mongo
 
 class User():
     def __init__(self, username, name, email, profilePic):
@@ -31,3 +32,10 @@ class User():
     @staticmethod
     def validate_login(password_hash, password):
         return check_password_hash(password_hash, password)
+    
+    @staticmethod
+    def get_user_id(username):
+        user = mongo.db.users.find_one({'username': username})
+        if not user:
+            return None
+        return user['_id']

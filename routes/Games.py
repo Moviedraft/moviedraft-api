@@ -6,26 +6,32 @@ Created on Mon Nov 25 20:16:39 2019
 """
 
 from flask import Blueprint, request, abort, make_response, jsonify
-from flask_login import login_required
+from flask_login import login_required, current_user
+from datetime import datetime
 import json
 from models.Database import mongo
 from models.GameModel import GameModel
+from models.User import User
 
 games_blueprint = Blueprint('Games', __name__)
 
 @games_blueprint.route('/games', methods=['POST'])
 @login_required
 def create_game():
+    currentUserId = User.get_user_id(current_user.username)
     try:
         jsonDump = json.dumps(request.json)
         jsonData = json.loads(jsonDump)
         game = GameModel(
                 gameName=jsonData['gameName'],
                 gameNameLowerCase=jsonData['gameName'].lower(),
+                startDate=datetime.strptime(jsonData['startDate'], '%Y-%m-%d'),
+                endDate=datetime.strptime(jsonData['endDate'], '%Y-%m-%d'),
                 playerBuyIn=jsonData['playerBuyIn'],
                 dollarSpendingCap=jsonData['dollarSpendingCap'],
                 movies=jsonData['movies'],
-                rules=jsonData['rules']
+                rules=jsonData['rules'],
+                commissionerId=currentUserId
                 )
     except:
         abort(make_response(jsonify(message='Request is not valid JSON.'), 500))
