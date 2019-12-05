@@ -14,6 +14,7 @@ from models.LoginManager import login
 from routes.Login import login_blueprint
 from routes.Games import games_blueprint
 from routes.Movies import movies_blueprint
+from routes.Rules import rules_blueprint
 
 sys.path.insert(0, '/models/')
 sys.path.insert(1, '/routes/')
@@ -35,6 +36,7 @@ client.client_id = app.config['GOOGLE_CLIENT_ID']
 app.register_blueprint(login_blueprint)
 app.register_blueprint(games_blueprint)
 app.register_blueprint(movies_blueprint)
+app.register_blueprint(rules_blueprint)
 
 if __name__ == '__main__':
     app.run()
