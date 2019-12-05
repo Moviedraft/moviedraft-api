@@ -11,6 +11,7 @@ from datetime import datetime
 import json
 from models.Database import mongo
 from models.GameModel import GameModel
+from models.RuleModel import RuleModel
 from models.User import User
 
 games_blueprint = Blueprint('Games', __name__)
@@ -22,17 +23,24 @@ def create_game():
     try:
         jsonDump = json.dumps(request.json)
         jsonData = json.loads(jsonDump)
-        game = GameModel(
-                gameName=jsonData['gameName'],
-                gameNameLowerCase=jsonData['gameName'].lower(),
-                startDate=datetime.strptime(jsonData['startDate'], '%Y-%m-%d'),
-                endDate=datetime.strptime(jsonData['endDate'], '%Y-%m-%d'),
-                playerBuyIn=jsonData['playerBuyIn'],
-                dollarSpendingCap=jsonData['dollarSpendingCap'],
-                movies=jsonData['movies'],
-                rules=jsonData['rules'],
-                commissionerId=currentUserId
-                )
+        
+        rulesArray = []
+        rulesJson = jsonData['gameRules']
+        for rule in rulesJson:
+            ruleModel = RuleModel(ruleName=rule['ruleName'], rules=rule['rules'])
+            rulesArray.append(ruleModel.__dict__)
+            
+            game = GameModel(
+                    gameName=jsonData['gameName'],
+                    gameNameLowerCase=jsonData['gameName'].lower(),
+                    startDate=datetime.strptime(jsonData['startDate'], '%Y-%m-%d'),
+                    endDate=datetime.strptime(jsonData['endDate'], '%Y-%m-%d'),
+                    playerBuyIn=jsonData['playerBuyIn'],
+                    dollarSpendingCap=jsonData['dollarSpendingCap'],
+                    movies=jsonData['movies'],
+                    rules=rulesArray,
+                    commissionerId=currentUserId
+                    )
     except:
         abort(make_response(jsonify(message='Request is not valid JSON.'), 500))
     
