@@ -25,7 +25,7 @@ def create_game():
         jsonData = json.loads(jsonDump)
         
         rulesArray = []
-        rulesJson = jsonData['gameRules']
+        rulesJson = jsonData['rules']
         for rule in rulesJson:
             ruleModel = RuleModel(ruleName=rule['ruleName'], rules=rule['rules'])
             rulesArray.append(ruleModel.__dict__)
