@@ -19,7 +19,7 @@ def get_movies():
     movies = []
     releaseType = request.args.get('releaseType')
     
-    if releaseType == MovieReleaseType.All.name:
+    if releaseType == MovieReleaseType.all.name:
         moviesResult = mongo.db.movies.find({})
         for movie in moviesResult:
             movieModel = MoviesModel(

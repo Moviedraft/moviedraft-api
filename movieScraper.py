@@ -68,12 +68,12 @@ for row in movieArray:
     
     releaseType = row[1][row[1].rfind('(')+1:row[1].rfind(')')]
     if releaseType == 'IMAX':
-        releaseType = 'Wide'
+        releaseType = 'wide'
         
     movieUrlElement = table.find_element_by_partial_link_text(title)
     url = movieUrlElement.get_property('href')
     
-    movie = Movie(releaseDate, title, releaseType, row[2], url)
+    movie = Movie(releaseDate, title, releaseType.lower(), row[2], url)
     
     existingMovie = db.movies.find_one({"url": url})
     if existingMovie:

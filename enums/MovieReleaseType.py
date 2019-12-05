@@ -7,10 +7,10 @@ Created on Thu Nov 28 13:59:36 2019
 from enum import Enum
 
 class MovieReleaseType(Enum): 
-    Wide = 1
-    Limited = 2
-    All = 3
+    wide = 1
+    limited = 2
+    all = 3
     
     @classmethod
     def has_value(cls, value):
-        return value in cls._member_names_ 
+        return value.lower() in cls._member_names_ 
