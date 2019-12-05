@@ -9,7 +9,6 @@ from enum import Enum
 class MovieReleaseType(Enum): 
     wide = 1
     limited = 2
-    all = 3
     
     @classmethod
     def has_value(cls, value):
