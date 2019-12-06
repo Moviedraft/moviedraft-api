@@ -23,7 +23,7 @@ def index():
             '<div><p>Google Profile Picture:</p>'
             '<img src="{}" alt="Google profile pic"></img></div>'
             '<a class="button" href="/logout">Logout</a>'.format(
-            current_user.name, current_user.email, current_user.profilePic))
+            current_user.firstName, current_user.email, current_user.profilePic))
     else:
         return '<a class="button" href="/login">Google Login</a>'
 
@@ -64,19 +64,27 @@ def callback():
     userinfo_response = requests.get(uri, headers=headers, data=body)
     
     if userinfo_response.json().get('email_verified'):
-        users_email = userinfo_response.json()['email']
+        userEmail = userinfo_response.json()['email']
         picture = userinfo_response.json()['picture']
-        users_name = userinfo_response.json()['given_name']
+        firstName = userinfo_response.json()['given_name']
+        lastName = userinfo_response.json()['family_name']
+        
     else:
         return abort(make_response(jsonify(message='User email not available or not verified by Google.'), 500))
     
-    user = User(username=users_email, name=users_name, email=users_email, profilePic=picture)
+    user = User(username=userEmail, 
+                firstName=firstName, 
+                lastName=lastName, 
+                email=userEmail, 
+                profilePic=picture)
     
     storedUser = mongo.db.users.find_one({'emailAddress': user.email})
+    
     if not storedUser:
         mongo.db.users.insert_one({
                 'username': user.email, 
-                'name': user.name, 
+                'firstName': user.firstName,
+                'lastName': user.lastName,
                 'emailAddress': user.email, 
                 'picture': user.profilePic
                 })

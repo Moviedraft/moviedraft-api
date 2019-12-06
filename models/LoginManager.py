@@ -18,7 +18,8 @@ def load_user(username):
         return None
     return User(
             username=user['username'],
-            name = user['name'],
+            firstName = user['firstName'],
+            lastName = user['lastName'],
             email = user['emailAddress'],
             profilePic = user['picture']
             )

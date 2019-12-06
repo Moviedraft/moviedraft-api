@@ -8,9 +8,10 @@ from werkzeug.security import check_password_hash
 from models.Database import mongo
 
 class User():
-    def __init__(self, username, name, email, profilePic):
+    def __init__(self, username, firstName, lastName, email, profilePic):
         self.username = username
-        self.name = name
+        self.firstName = firstName
+        self.lastName = lastName
         self.email = email
         self.profilePic = profilePic
 
