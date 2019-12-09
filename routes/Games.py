@@ -13,6 +13,7 @@ import json
 from models.Database import mongo
 from models.GameModel import GameModel
 from models.RuleModel import RuleModel
+from models.MovieModel import MovieModel
 from models.User import User
 
 games_blueprint = Blueprint('Games', __name__)
@@ -62,8 +63,23 @@ def create_game():
 @login_required
 def get_game(gameName):
     game = GameModel.load_game(gameName.lower())
+    
     if game:
+        movies = []
+        for movieId in game.movies:
+            movieResult = mongo.db.movies.find_one({'_id': ObjectId(movieId)})
+            movieModel = MovieModel(id=movieResult['_id'],
+                                     releaseDate=movieResult['releaseDate'],
+                                     title=movieResult['title'],
+                                     releaseType=movieResult['releaseType'],
+                                     distributor=movieResult['distributor'],
+                                     url=movieResult['url'],
+                                     lastUpdated=movieResult['lastUpdated'])
+            movies.append(movieModel.__dict__)          
+        game.movies = movies
+        
         return json.dumps(game.__dict__, default=str), 200
+    
     abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
 
 @games_blueprint.route('/games/<gameName>', methods=['DELETE'])
