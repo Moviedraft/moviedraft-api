@@ -67,7 +67,7 @@ for row in movieArray:
     title = str.strip(row[1][0:row[1].rfind('(')])
     
     releaseType = row[1][row[1].rfind('(')+1:row[1].rfind(')')]
-    if releaseType == 'IMAX':
+    if releaseType == 'IMAX' or releaseType == 'Expands Wide':
         releaseType = 'wide'
         
     movieUrlElement = table.find_element_by_partial_link_text(title)
