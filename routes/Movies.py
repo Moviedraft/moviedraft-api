@@ -41,7 +41,6 @@ def get_movies():
                     movie['title'], 
                     movie['releaseType'], 
                     movie['distributor'], 
-                    movie['url'], 
                     movie['lastUpdated'])
                 movies.append(movieModel.__dict__)
         return jsonify(movies), 200
@@ -54,7 +53,6 @@ def get_movies():
                     movie['title'], 
                     movie['releaseType'], 
                     movie['distributor'], 
-                    movie['url'], 
                     movie['lastUpdated'])
             movies.append(movieModel.__dict__)
         return jsonify(movies), 200

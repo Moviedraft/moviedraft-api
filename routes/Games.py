@@ -73,7 +73,6 @@ def get_game(gameName):
                                      title=movieResult['title'],
                                      releaseType=movieResult['releaseType'],
                                      distributor=movieResult['distributor'],
-                                     url=movieResult['url'],
                                      lastUpdated=movieResult['lastUpdated'])
             movies.append(movieModel.__dict__)          
         game.movies = movies
