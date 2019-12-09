@@ -9,7 +9,7 @@ from flask import Blueprint, request, jsonify
 from flask_login import login_required
 from datetime import datetime
 from models.Database import mongo
-from models.MoviesModel import MoviesModel
+from models.MovieModel import MovieModel
 from enums.MovieReleaseType import MovieReleaseType
 
 movies_blueprint = Blueprint('Movies', __name__)
@@ -33,9 +33,9 @@ def get_movies():
     if releaseType:
         if MovieReleaseType.has_value(releaseType):
             moviesResult = mongo.db.movies.find({'releaseType': releaseType, 
-                                                 'releaseDate': releaseDateFilterCondition}).sort("releaseDate", 1)
+                                                 'releaseDate': releaseDateFilterCondition}).sort('releaseDate', 1)
             for movie in moviesResult:
-                movieModel = MoviesModel(
+                movieModel = MovieModel(
                     movie['_id'], 
                     movie['releaseDate'], 
                     movie['title'], 
@@ -46,9 +46,9 @@ def get_movies():
                 movies.append(movieModel.__dict__)
         return jsonify(movies), 200
     else:
-        moviesResult = mongo.db.movies.find({'releaseDate': releaseDateFilterCondition}).sort("releaseDate", 1) 
+        moviesResult = mongo.db.movies.find({'releaseDate': releaseDateFilterCondition}).sort('releaseDate', 1) 
         for movie in moviesResult:
-            movieModel = MoviesModel(
+            movieModel = MovieModel(
                     movie['_id'], 
                     movie['releaseDate'], 
                     movie['title'], 
