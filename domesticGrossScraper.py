@@ -5,6 +5,13 @@ Created on Mon Dec  9 13:35:46 2019
 @author: Jason
 """
 
+# =============================================================================
+# Script requires two arguements to be passed when running:
+#     The connection string to MongoDB
+#     The database name
+#     The file path for ChromeDriver
+# =============================================================================
+
 from selenium import webdriver
 from pymongo import MongoClient
 from datetime import datetime
