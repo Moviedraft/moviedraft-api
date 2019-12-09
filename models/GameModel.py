@@ -10,7 +10,7 @@ from datetime import datetime
 
 class GameModel():
     def __init__(self, gameName, gameNameLowerCase, startDate, endDate, 
-                 playerBuyIn, dollarSpendingCap, movies, rules, commissionerId):
+                 playerBuyIn, dollarSpendingCap, movies, rules, commissionerId, playerIds):
         self.gameName = gameName
         self.gameNameLowerCase = gameNameLowerCase
         self.startDate = startDate
@@ -20,6 +20,7 @@ class GameModel():
         self.movies = movies
         self.rules = rules
         self.commissionerId = commissionerId
+        self.playerIds = playerIds
         
     def load_game(gameNameLowerCase):
         game = mongo.db.games.find_one({'gameNameLowerCase': gameNameLowerCase})
@@ -34,5 +35,6 @@ class GameModel():
                 dollarSpendingCap=game['dollarSpendingCap'],
                 movies=game['movies'],
                 rules=game['rules'],
-                commissionerId=str(game['commissionerId'])
+                commissionerId=game['commissionerId'],
+                playerIds=game['playerIds']
                 )
