@@ -5,9 +5,9 @@ Created on Tue Nov 19 13:45:07 2019
 @author: Jason
 """
 
-from flask import Blueprint, request, redirect, url_for, abort, make_response, jsonify
+from flask import Blueprint, request, abort, make_response, jsonify
 from flask import current_app as app
-from flask_login import current_user, login_user, logout_user, login_required
+from flask_login import login_user, logout_user, login_required
 from models.User import User
 from models.Database import mongo
 from models.WebApplicationClient import client
@@ -18,14 +18,7 @@ login_blueprint = Blueprint('Login', __name__)
 
 @login_blueprint.route('/')
 def index():
-    if current_user.is_authenticated:
-        return ('<p>Hello, {}! You\'re logged in! Email: {}</p>'
-            '<div><p>Google Profile Picture:</p>'
-            '<img src="{}" alt="Google profile pic"></img></div>'
-            '<a class="button" href="/logout">Logout</a>'.format(
-            current_user.firstName, current_user.email, current_user.profilePic))
-    else:
-        return '<a class="button" href="/login">Google Login</a>'
+    return '', 200
 
 @login_blueprint.route('/login')
 def login():
@@ -36,7 +29,8 @@ def login():
         redirect_uri=request.base_url + "/callback",
         scope=["openid", "email", "profile"]
     )
-    return redirect(request_uri)
+    
+    return make_response(jsonify(requestUri=request_uri), 200)
 
 @login_blueprint.route("/login/callback")
 def callback():
@@ -91,13 +85,13 @@ def callback():
     
     login_user(user)
     
-    return redirect(url_for("Login.index"))
+    return '', 200
 
 @login_blueprint.route("/logout")
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for("Login.index"))
+    return '', 200
 
 def get_google_provider_cfg():
     return requests.get(app.config['GOOGLE_DISCOVERY_URL']).json()
