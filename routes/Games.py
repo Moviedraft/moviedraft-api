@@ -8,6 +8,7 @@ Created on Mon Nov 25 20:16:39 2019
 from flask import Blueprint, request, abort, make_response, jsonify
 from flask_login import login_required, current_user
 from datetime import datetime
+from bson.objectid import ObjectId
 import json
 from models.Database import mongo
 from models.GameModel import GameModel
@@ -30,6 +31,11 @@ def create_game():
             ruleModel = RuleModel(ruleName=rule['ruleName'], rules=rule['rules'])
             rulesArray.append(ruleModel.__dict__)
             
+        playerIdsArray = []
+        playerIdsJson = jsonData['playerIds']
+        for id in playerIdsJson:
+            playerIdsArray.append(ObjectId(id))
+            
             game = GameModel(
                     gameName=jsonData['gameName'],
                     gameNameLowerCase=jsonData['gameName'].lower(),
@@ -39,7 +45,8 @@ def create_game():
                     dollarSpendingCap=jsonData['dollarSpendingCap'],
                     movies=jsonData['movies'],
                     rules=rulesArray,
-                    commissionerId=currentUserId
+                    commissionerId=currentUserId,
+                    playerIds=playerIdsArray
                     )
     except:
         abort(make_response(jsonify(message='Request is not valid JSON.'), 500))
@@ -56,7 +63,7 @@ def create_game():
 def get_game(gameName):
     game = GameModel.load_game(gameName.lower())
     if game:
-        return game.__dict__, 200
+        return json.dumps(game.__dict__, default=str), 200
     abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
 
 @games_blueprint.route('/games/<gameName>', methods=['DELETE'])
