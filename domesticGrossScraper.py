@@ -6,7 +6,7 @@ Created on Mon Dec  9 13:35:46 2019
 """
 
 # =============================================================================
-# Script requires two arguements to be passed when running:
+# Script requires three arguements to be passed when running:
 #     The connection string to MongoDB
 #     The database name
 #     The file path for ChromeDriver
