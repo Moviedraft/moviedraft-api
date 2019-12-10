@@ -8,6 +8,7 @@ Created on Tue Nov 19 08:45:14 2019
 import sys
 import os
 from flask import Flask, session
+from flask_cors import CORS
 from datetime import timedelta
 from models.Database import mongo
 from models.WebApplicationClient import client
@@ -32,6 +33,7 @@ app.config['SESSION_TIMEOUT_MINUTES'] = os.environ['SESSION_TIMEOUT_MINUTES']
 
 mongo.init_app(app)
 login.init_app(app)
+CORS(app)
 
 client.client_id = app.config['GOOGLE_CLIENT_ID']
 
