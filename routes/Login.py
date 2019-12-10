@@ -85,7 +85,7 @@ def callback():
     
     login_user(user)
     
-    return '', 200
+    return jsonify(user.__dict__), 200
 
 @login_blueprint.route("/logout")
 @login_required
