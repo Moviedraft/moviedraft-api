@@ -33,7 +33,7 @@ app.config['SESSION_TIMEOUT_MINUTES'] = os.environ['SESSION_TIMEOUT_MINUTES']
 
 mongo.init_app(app)
 login.init_app(app)
-CORS(app)
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:8000"}})
 
 client.client_id = app.config['GOOGLE_CLIENT_ID']
 
