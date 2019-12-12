@@ -13,9 +13,10 @@ from datetime import timedelta
 from models.Database import mongo
 from models.WebApplicationClient import client
 from models.LoginManager import login
+from models.Api import api
+from routes.Movies import movies_namespace
 from routes.Login import login_blueprint
 from routes.Games import games_blueprint
-from routes.Movies import movies_blueprint
 from routes.Rules import rules_blueprint
 
 sys.path.insert(0, '/models/')
@@ -33,13 +34,15 @@ app.config['SESSION_TIMEOUT_MINUTES'] = os.environ['SESSION_TIMEOUT_MINUTES']
 
 mongo.init_app(app)
 login.init_app(app)
+api.init_app(app)
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:8000"}})
 
 client.client_id = app.config['GOOGLE_CLIENT_ID']
 
+api.add_namespace(movies_namespace)
+
 app.register_blueprint(login_blueprint)
 app.register_blueprint(games_blueprint)
-app.register_blueprint(movies_blueprint)
 app.register_blueprint(rules_blueprint)
 
 @app.before_request
