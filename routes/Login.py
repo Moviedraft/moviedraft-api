@@ -16,10 +16,6 @@ import requests
 
 login_blueprint = Blueprint('Login', __name__)
 
-@login_blueprint.route('/')
-def index():
-    return '', 200
-
 @login_blueprint.route('/login')
 def login():
     google_provider_cfg = get_google_provider_cfg()
