@@ -12,7 +12,7 @@ description = ('Moviedraft game API '
                        '.download-contents {display: none !important} '
                        '.try-out {display: none !important}</style>')
 
-api = Api(
+restApi = Api(
         title='Moviedraft', 
         doc='/swagger', 
         version='1.0', 
