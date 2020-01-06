@@ -14,13 +14,13 @@ from models.Database import mongo
 from models.WebApplicationClient import client
 from models.LoginManager import login
 from models.RestApi import restApi
-from routes.Movies import movies_namespace
-from routes.Login import login_blueprint
-from routes.Games import games_blueprint
-from routes.Rules import rules_blueprint
+from namespaces.Movies import movies_namespace
+from namespaces.Login import login_blueprint
+from namespaces.Games import games_blueprint
+from namespaces.Rules import rules_blueprint
 
 sys.path.insert(0, '/models/')
-sys.path.insert(1, '/routes/')
+sys.path.insert(1, '/namespaces/')
 sys.path.insert(2, '/enums/')
 
 application = app = Flask(__name__)
