@@ -5,8 +5,9 @@ Created on Mon Nov 25 20:16:39 2019
 @author: Jason
 """
 
-from flask import Blueprint, request, abort, make_response, jsonify
+from flask import request, abort, make_response, jsonify
 from flask_login import login_required, current_user
+from flask_restplus import Namespace, Resource, fields
 from datetime import datetime
 from bson.objectid import ObjectId
 import json
@@ -15,17 +16,53 @@ from models.GameModel import GameModel
 from models.RuleModel import RuleModel
 from models.MovieModel import MovieModel
 from models.User import User
+from namespaces.Movies import movies_namespace
+from namespaces.Rules import rules_namespace
 
-games_blueprint = Blueprint('Games', __name__)
+games_namespace = Namespace('games', description='Draft league game data.')
 
-@games_blueprint.route('/games', methods=['POST'])
-@login_required
-def create_game():
-    currentUserId = User.get_user_id(current_user.username)
-    try:
-        jsonDump = json.dumps(request.json)
+games_namespace.model('GamePayload', {
+        'gameName': fields.String,
+        'startDate': fields.String,
+        'endDate': fields.String,
+        'playerBuyIn': fields.Integer,
+        'dollarSpendingCap': fields.Integer,
+        'movies': fields.List(fields.String),
+        'rules': fields.List(fields.Nested(rules_namespace.models['Rules'])),
+        'commissionerId': fields.String,
+        'playerIds': fields.List(fields.String)
+        })
+
+games_namespace.model('GamePostResponse', {
+        'id': fields.String
+        })
+
+games_namespace.model('Game', {
+        'gameName': fields.String,
+        'startDate': fields.String,
+        'endDate': fields.String,
+        'playerBuyIn': fields.Integer,
+        'dollarSpendingCap': fields.Integer,
+        'movies': fields.List(fields.Nested(movies_namespace.models['MovieModelFields'])),
+        'rules': fields.List(fields.Nested(rules_namespace.models['Rules'])),
+        'commissionerId': fields.String,
+        'playerIds': fields.List(fields.String)
+        })
+
+@games_namespace.route('')
+class CreateGames(Resource):
+    @login_required
+    @games_namespace.expect(games_namespace.models['GamePayload'])
+    @games_namespace.response(200, 'Success', games_namespace.models['GamePostResponse'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(400, 'Bad Request')
+    @games_namespace.response(409, 'Conflict')
+    @games_namespace.response(500, 'Internal Server Error')
+    def post(self):
+        currentUserId = User.get_user_id(current_user.username)
+
+        jsonDump = json.dumps(request.get_json(force=True))
         jsonData = json.loads(jsonDump)
-        
         rulesArray = []
         rulesJson = jsonData['rules']
         for rule in rulesJson:
@@ -49,46 +86,61 @@ def create_game():
                     commissionerId=currentUserId,
                     playerIds=playerIdsArray
                     )
-    except:
-        abort(make_response(jsonify(message='Request is not valid JSON.'), 500))
-    
-    if not GameModel.load_game(game.gameName.lower()) == None:
-        abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(game.gameName)), 409))
+
+        if not GameModel.load_game(game.gameName.lower()) == None:
+            abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(game.gameName)), 409))
         
-    result = mongo.db.games.insert_one(game.__dict__)
-
-    return str(result.inserted_id), 200
-
-@games_blueprint.route('/games/<gameName>', methods=['GET'])
-@login_required
-def get_game(gameName):
-    game = GameModel.load_game(gameName.lower())
-    
-    if game:
-        movies = []
-        for movieId in game.movies:
-            movieResult = mongo.db.movies.find_one({'_id': ObjectId(movieId)})
-            movieModel = MovieModel(id=movieResult['_id'],
-                                     releaseDate=movieResult['releaseDate'],
-                                     title=movieResult['title'],
-                                     releaseType=movieResult['releaseType'],
-                                     distributor=movieResult['distributor'],
-                                     lastUpdated=movieResult['lastUpdated'])
-            movies.append(movieModel.__dict__)          
-        game.movies = movies
+        result = mongo.db.games.insert_one(game.__dict__)
         
-        return json.dumps(game.__dict__, default=str), 200
+        return make_response(jsonify(id=str(result.inserted_id)), 200)
     
-    abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
+@games_namespace.route('/<string:gameName>')
+class Game(Resource):
+    @login_required
+    @games_namespace.response(200, 'Success', games_namespace.models['Game'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def get(self, gameName):
+        game = GameModel.load_game(gameName.lower())
+    
+        if game:
+            movies = []
+            for movieId in game.movies:
+                movieResult = mongo.db.movies.find_one({'_id': ObjectId(movieId)})
+                movieModel = MovieModel(id=movieResult['_id'],
+                                        releaseDate=movieResult['releaseDate'],
+                                        title=movieResult['title'],
+                                        releaseType=movieResult['releaseType'],
+                                        distributor=movieResult['distributor'],
+                                        lastUpdated=movieResult['lastUpdated'])
+                movies.append(movieModel.__dict__)          
+                game.movies = movies
+            
+            commissionerId = game.commissionerId
+            game.commissionerId = str(commissionerId)
+            
+            playerIds = []
+            for id in game.playerIds:
+                playerIds.append(str(id))
+            game.playerIds = playerIds
+            
+            print(game.__dict__)
+            return make_response(jsonify(game.__dict__), 200)
+    
+        abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
 
-@games_blueprint.route('/games/<gameName>', methods=['DELETE'])
-@login_required
-def delete_game(gameName):
-    game = GameModel.load_game(gameName.lower())
-    if game:
-        try:
-            mongo.db.games.delete_one({'gameName': game.gameName})
-            return '', 200
-        except:
-            abort(make_response(jsonify('Game name: \'{}\' could not be deleted'.format(gameName)), 500))
-    abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
+    @login_required
+    @games_namespace.response(200, 'Success')
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def delete(self, gameName):
+        game = GameModel.load_game(gameName.lower())
+        if game:
+            try:
+                mongo.db.games.delete_one({'gameName': game.gameName})
+                return make_response('', 200)
+            except:
+                abort(make_response(jsonify('Game name: \'{}\' could not be deleted'.format(gameName)), 500))
+        abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
