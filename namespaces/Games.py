@@ -61,7 +61,7 @@ class CreateGames(Resource):
     def post(self):
         currentUserId = User.get_user_id(current_user.username)
 
-        jsonDump = json.dumps(request.json)
+        jsonDump = json.dumps(request.get_json(force=True))
         jsonData = json.loads(jsonDump)
         rulesArray = []
         rulesJson = jsonData['rules']
