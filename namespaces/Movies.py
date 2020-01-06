@@ -5,7 +5,7 @@ Created on Thu Nov 28 13:42:32 2019
 @author: Jason
 """
 
-from flask import request
+from flask import request, make_response, jsonify
 from flask_login import login_required
 from flask_restplus import Namespace, Resource, fields
 from datetime import datetime
@@ -15,7 +15,7 @@ from enums.MovieReleaseType import MovieReleaseType
 
 movies_namespace = Namespace('movies', description='Retrieve movie data.')
 
-movieModel = movies_namespace.model('Movies',{ 
+movies_namespace.model('MovieModelFields',{ 
         'id': fields.String,
         'releaseDate': fields.String,
         'title': fields.String,
@@ -24,9 +24,14 @@ movieModel = movies_namespace.model('Movies',{
         'lastUpdated': fields.String
         })
 
+movies_namespace.model('Movies',{
+        'movies': fields.List(fields.Nested(movies_namespace.models['MovieModelFields']))
+        })
+
 @movies_namespace.route('')
 class Movies(Resource):
-    @movies_namespace.response(200, 'Success', movieModel)
+    @movies_namespace.response(200, 'Success', movies_namespace.models['Movies'])
+    @movies_namespace.response(500, 'Internal Server Error')
     @login_required
     def get(self):
         movies = []
@@ -47,24 +52,24 @@ class Movies(Resource):
                 moviesResult = mongo.db.movies.find({'releaseType': releaseType, 
                                                      'releaseDate': releaseDateFilterCondition}).sort('releaseDate', 1)
                 for movie in moviesResult:
-                    movieModel = MovieModel(
+                    movieResponseModel = MovieModel(
                         movie['_id'], 
                         movie['releaseDate'], 
                         movie['title'], 
                         movie['releaseType'], 
                         movie['distributor'], 
                         movie['lastUpdated'])
-                    movies.append(movieModel.__dict__)
-            return movies
+                    movies.append(movieResponseModel.__dict__)
+            return make_response(jsonify(movies=movies), 200)
         else:
             moviesResult = mongo.db.movies.find({'releaseDate': releaseDateFilterCondition}).sort('releaseDate', 1) 
             for movie in moviesResult:
-                movieModel = MovieModel(
+                movieResponseModel = MovieModel(
                     movie['_id'], 
                     movie['releaseDate'], 
                     movie['title'], 
                     movie['releaseType'], 
                     movie['distributor'], 
                     movie['lastUpdated'])
-                movies.append(movieModel.__dict__)
-            return movies
+                movies.append(movieResponseModel.__dict__)
+            return make_response(jsonify(movies=movies), 200)
