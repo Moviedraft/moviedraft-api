@@ -17,8 +17,8 @@ from models.RestApi import restApi
 from namespaces.Movies import movies_namespace
 from namespaces.Authentication import login_namespace
 from namespaces.Authentication import logout_namespace
-from namespaces.Games import games_blueprint
-from namespaces.Rules import rules_blueprint
+from namespaces.Games import games_namespace
+from namespaces.Rules import rules_namespace
 
 sys.path.insert(0, '/models/')
 sys.path.insert(1, '/namespaces/')
@@ -43,9 +43,8 @@ client.client_id = app.config['GOOGLE_CLIENT_ID']
 restApi.add_namespace(movies_namespace)
 restApi.add_namespace(login_namespace)
 restApi.add_namespace(logout_namespace)
-
-app.register_blueprint(games_blueprint)
-app.register_blueprint(rules_blueprint)
+restApi.add_namespace(games_namespace)
+restApi.add_namespace(rules_namespace)
 
 @app.before_request
 def before_request():
