@@ -17,20 +17,20 @@ import requests
 
 login_namespace = Namespace('login', description='Site login using Google Oauth2.')
 
-userModel = login_namespace.model('User',{ 
+login_namespace.model('User',{ 
         'firstName': fields.String,
         'lastName': fields.String,
         'email': fields.String,
         'profilePic': fields.String
         })
 
-requestAuthUriModel = login_namespace.model('RequestAuthUriModel',{ 
+login_namespace.model('RequestAuthUriModel',{ 
         'requestUri': fields.String
         })
 
 @login_namespace.route('')
 class RequestAuthUri(Resource):
-    @login_namespace.response(200, 'Success', requestAuthUriModel)
+    @login_namespace.response(200, 'Success', login_namespace.models['RequestAuthUriModel'])
     @login_namespace.response(500, 'Internal Server Error')
     def get(self):
         google_provider_cfg = get_google_provider_cfg()
@@ -45,7 +45,7 @@ class RequestAuthUri(Resource):
 
 @login_namespace.route('/callback')
 class LoginCallback(Resource):
-    @login_namespace.response(200, 'Success', userModel)
+    @login_namespace.response(200, 'Success', login_namespace.models['User'])
     @login_namespace.response(500, 'Internal Server Error')
     def get(self):
         code = request.args.get('code')
@@ -105,9 +105,10 @@ logout_namespace = Namespace('logout', description='Site logout.')
 
 @logout_namespace.route('')
 class Logout(Resource):
+    @login_required
     @login_namespace.response(200, 'Success')
     @login_namespace.response(500, 'Internal Server Error')
-    @login_required
+    @login_namespace.response(401, 'Authentication Error')
     def get(self):
         logout_user()
         return make_response('', 200)    

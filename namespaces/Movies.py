@@ -30,9 +30,10 @@ movies_namespace.model('Movies',{
 
 @movies_namespace.route('')
 class Movies(Resource):
+    @login_required
     @movies_namespace.response(200, 'Success', movies_namespace.models['Movies'])
     @movies_namespace.response(500, 'Internal Server Error')
-    @login_required
+    @movies_namespace.response(401, 'Authentication Error') 
     def get(self):
         movies = []
         releaseType = request.args.get('releaseType')
@@ -52,24 +53,24 @@ class Movies(Resource):
                 moviesResult = mongo.db.movies.find({'releaseType': releaseType, 
                                                      'releaseDate': releaseDateFilterCondition}).sort('releaseDate', 1)
                 for movie in moviesResult:
-                    movieResponseModel = MovieModel(
+                    movieModel = MovieModel(
                         movie['_id'], 
                         movie['releaseDate'], 
                         movie['title'], 
                         movie['releaseType'], 
                         movie['distributor'], 
                         movie['lastUpdated'])
-                    movies.append(movieResponseModel.__dict__)
+                    movies.append(movieModel.__dict__)
             return make_response(jsonify(movies=movies), 200)
         else:
             moviesResult = mongo.db.movies.find({'releaseDate': releaseDateFilterCondition}).sort('releaseDate', 1) 
             for movie in moviesResult:
-                movieResponseModel = MovieModel(
+                movieModel = MovieModel(
                     movie['_id'], 
                     movie['releaseDate'], 
                     movie['title'], 
                     movie['releaseType'], 
                     movie['distributor'], 
                     movie['lastUpdated'])
-                movies.append(movieResponseModel.__dict__)
+                movies.append(movieModel.__dict__)
             return make_response(jsonify(movies=movies), 200)
