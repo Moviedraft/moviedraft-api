@@ -15,7 +15,7 @@ from enums.MovieReleaseType import MovieReleaseType
 
 movies_namespace = Namespace('movies', description='Retrieve movie data.')
 
-movieModel = movies_namespace.model('Movie',{ 
+movieModel = movies_namespace.model('Movies',{ 
         'id': fields.String,
         'releaseDate': fields.String,
         'title': fields.String,
