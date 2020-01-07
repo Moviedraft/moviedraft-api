@@ -8,12 +8,13 @@ from werkzeug.security import check_password_hash
 from models.Database import mongo
 
 class User():
-    def __init__(self, username, firstName, lastName, email, profilePic):
+    def __init__(self, username, firstName, lastName, email, profilePic, role):
         self.username = username
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
         self.profilePic = profilePic
+        self.role = role
 
     @staticmethod
     def is_authenticated():
@@ -40,3 +41,6 @@ class User():
         if not user:
             return None
         return user['_id']
+    
+    def allowed(self, requiredRole):
+        return self.role >= requiredRole
