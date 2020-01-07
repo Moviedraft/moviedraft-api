@@ -12,6 +12,8 @@ from datetime import datetime
 from models.Database import mongo
 from models.MovieModel import MovieModel
 from enums.MovieReleaseType import MovieReleaseType
+from decorators.RoleAccessDecorator import requires_role
+from enums.Role import Role
 
 movies_namespace = Namespace('movies', description='Retrieve movie data.')
 
@@ -31,6 +33,7 @@ movies_namespace.model('Movies',{
 @movies_namespace.route('')
 class Movies(Resource):
     @login_required
+    @requires_role(Role.user.value)
     @movies_namespace.response(200, 'Success', movies_namespace.models['Movies'])
     @movies_namespace.response(500, 'Internal Server Error')
     @movies_namespace.response(401, 'Authentication Error') 
