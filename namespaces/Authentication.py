@@ -12,6 +12,8 @@ from flask_restplus import Namespace, Resource, fields
 from models.User import User
 from models.Database import mongo
 from models.WebApplicationClient import client
+from decorators.RoleAccessDecorator import requires_role
+from enums.Role import Role
 import json
 import requests
 
@@ -21,7 +23,8 @@ login_namespace.model('User',{
         'firstName': fields.String,
         'lastName': fields.String,
         'email': fields.String,
-        'profilePic': fields.String
+        'profilePic': fields.String,
+        'role': fields.Integer
         })
 
 login_namespace.model('RequestAuthUriModel',{ 
@@ -80,23 +83,26 @@ class LoginCallback(Resource):
         else:
             return abort(make_response(jsonify(message='User email not available or not verified by Google.'), 500))
     
-        userModel = User(username=userEmail, 
-                    firstName=firstName, 
-                    lastName=lastName, 
-                    email=userEmail, 
-                    profilePic=picture)
-    
-        storedUser = mongo.db.users.find_one({'emailAddress': userModel.email})
+        storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
     
         if not storedUser:
             mongo.db.users.insert_one({
-                'username': userModel.email, 
-                'firstName': userModel.firstName,
-                'lastName': userModel.lastName,
-                'emailAddress': userModel.email, 
-                'picture': userModel.profilePic
+                'username': userEmail, 
+                'firstName': firstName,
+                'lastName': lastName,
+                'emailAddress': userEmail, 
+                'picture': picture,
+                'role': 1
                 })
-    
+            storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
+        
+        userModel = User(username=storedUser['username'], 
+                    firstName=storedUser['firstName'], 
+                    lastName=storedUser['lastName'], 
+                    email=storedUser['emailAddress'], 
+                    profilePic=storedUser['picture'],
+                    role=storedUser['role'])
+        
         login_user(userModel)
     
         return make_response(userModel.__dict__, 200)
@@ -106,6 +112,7 @@ logout_namespace = Namespace('logout', description='Site logout.')
 @logout_namespace.route('')
 class Logout(Resource):
     @login_required
+    @requires_role(Role.user.value)
     @login_namespace.response(200, 'Success')
     @login_namespace.response(500, 'Internal Server Error')
     @login_namespace.response(401, 'Authentication Error')

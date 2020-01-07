@@ -23,6 +23,7 @@ from namespaces.Rules import rules_namespace
 sys.path.insert(0, '/models/')
 sys.path.insert(1, '/namespaces/')
 sys.path.insert(2, '/enums/')
+sys.path.insert(2, '/decorators/')
 
 application = app = Flask(__name__)
 

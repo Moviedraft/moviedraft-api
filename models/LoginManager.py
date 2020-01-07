@@ -21,5 +21,6 @@ def load_user(username):
             firstName = user['firstName'],
             lastName = user['lastName'],
             email = user['emailAddress'],
-            profilePic = user['picture']
+            profilePic = user['picture'],
+            role = user['role']
             )
