@@ -5,7 +5,8 @@ Created on Mon Nov 25 20:16:39 2019
 @author: Jason
 """
 
-from flask import request, abort, make_response, jsonify
+from flask import request, abort, make_response, jsonify, render_template
+from flask import current_app as app
 from flask_login import login_required, current_user
 from flask_restplus import Namespace, Resource, fields
 from datetime import datetime
@@ -16,6 +17,8 @@ from models.GameModel import GameModel
 from models.RuleModel import RuleModel
 from models.MovieModel import MovieModel
 from models.User import User
+from models.Mailer import Emailer
+from models.Executor import executor
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
 from decorators.RoleAccessDecorator import requires_role
@@ -29,10 +32,9 @@ games_namespace.model('GamePayload', {
         'endDate': fields.String,
         'playerBuyIn': fields.Integer,
         'dollarSpendingCap': fields.Integer,
+        'playerEmails': fields.List(fields.String),
         'movies': fields.List(fields.String),
-        'rules': fields.List(fields.Nested(rules_namespace.models['Rules'])),
-        'commissionerId': fields.String,
-        'playerIds': fields.List(fields.String)
+        'rules': fields.Nested(rules_namespace.models['Rules'])
         })
 
 games_namespace.model('GamePostResponse', {
@@ -71,11 +73,25 @@ class CreateGames(Resource):
         for rule in rulesJson:
             ruleModel = RuleModel(ruleName=rule['ruleName'], rules=rule['rules'])
             rulesArray.append(ruleModel.__dict__)
-            
-        playerIdsArray = []
-        playerIdsJson = jsonData['playerIds']
-        for id in playerIdsJson:
-            playerIdsArray.append(ObjectId(id))
+        
+        playerIds = []
+        playerEmailsJson = jsonData['playerEmails']
+        for email in playerEmailsJson:   
+            player = mongo.db.users.find_one({'emailAddress': email}, {'_id':1, 'firstName':1})
+            if player:
+                playerIds.append(str(player['_id']))
+                recipientName = player['firstName']
+            else:
+                playerIds.append(email)
+                recipientName = email.split('@')[0]
+                
+            executor.submit(Emailer.send_email, 
+                                 'Invitation to Moviedraft', 
+                                 app.config['MAIL_USERNAME'], 
+                                 [email],
+                                 None,
+                                 render_template('InviteToGame.html', recipientName=recipientName, user=current_user)
+                                 )
             
             game = GameModel(
                     gameName=jsonData['gameName'],
@@ -87,7 +103,7 @@ class CreateGames(Resource):
                     movies=jsonData['movies'],
                     rules=rulesArray,
                     commissionerId=currentUserId,
-                    playerIds=playerIdsArray
+                    playerIds=playerIds
                     )
 
         if not GameModel.load_game(game.gameName.lower()) == None:
@@ -126,7 +142,10 @@ class Game(Resource):
             
             playerIds = []
             for id in game.playerIds:
-                playerIds.append(str(id))
+                if ObjectId.is_valid(id):
+                    player = mongo.db.users.find_one({'_id': ObjectId(id)}, {'_id':1})
+                    if player:
+                        playerIds.append(str(player['_id']))
             game.playerIds = playerIds
             
             return make_response(jsonify(game.__dict__), 200)

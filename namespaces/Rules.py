@@ -19,7 +19,7 @@ wildcard = fields.Wildcard(fields.Integer)
 
 rules_namespace.model('Rules', {
         'ruleName': fields.String,
-        'rules': fields.List(wildcard)
+        'rules': wildcard
         })
 
 @rules_namespace.route('')

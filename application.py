@@ -14,6 +14,8 @@ from models.Database import mongo
 from models.WebApplicationClient import client
 from models.LoginManager import login
 from models.RestApi import restApi
+from models.Mailer import mail
+from models.Executor import executor
 from namespaces.Movies import movies_namespace
 from namespaces.Authentication import login_namespace
 from namespaces.Authentication import logout_namespace
@@ -33,10 +35,17 @@ app.config['GOOGLE_CLIENT_ID'] = os.environ['GOOGLE_CLIENT_ID']
 app.config['GOOGLE_CLIENT_SECRET'] = os.environ['GOOGLE_CLIENT_SECRET']
 app.config['GOOGLE_DISCOVERY_URL'] = os.environ['GOOGLE_DISCOVERY_URL']
 app.config['SESSION_TIMEOUT_MINUTES'] = os.environ['SESSION_TIMEOUT_MINUTES']
+app.config['MAIL_SERVER'] = os.environ['MAIL_SERVER']
+app.config['MAIL_PORT'] = os.environ['MAIL_PORT']
+app.config['MAIL_USE_SSL'] = os.environ['MAIL_USE_SSL']
+app.config['MAIL_USERNAME'] = os.environ['MAIL_USERNAME']
+app.config['MAIL_PASSWORD'] = os.environ['MAIL_PASSWORD']
 
 mongo.init_app(app)
 login.init_app(app)
 restApi.init_app(app)
+mail.init_app(app)
+executor.init_app(app)
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:8000"}})
 
 client.client_id = app.config['GOOGLE_CLIENT_ID']
