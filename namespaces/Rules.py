@@ -8,7 +8,7 @@ Created on Thu Dec  5 13:36:27 2019
 from flask import jsonify, make_response
 from flask_login import login_required
 from flask_restplus import Namespace, Resource, fields
-from models.Database import mongo
+from utilities.Database import mongo
 from models.RuleModel import RuleModel
 from decorators.RoleAccessDecorator import requires_role
 from enums.Role import Role

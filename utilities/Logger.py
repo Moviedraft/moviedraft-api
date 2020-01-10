@@ -5,7 +5,7 @@ Created on Thu Jan  9 15:56:54 2020
 @author: Jason
 """
 
-from models.Database import mongo
+from utilities.Database import mongo
 from models.MailLogModel import MailLogModel
 from datetime import datetime
 

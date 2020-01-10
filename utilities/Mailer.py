@@ -6,7 +6,7 @@ Created on Wed Jan  8 14:11:00 2020
 """
 
 from flask_mail import Mail, Message
-from models.Logger import Logger
+from utilities.Logger import Logger
 
 mail = Mail()
 

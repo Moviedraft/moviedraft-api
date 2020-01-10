@@ -5,7 +5,7 @@ Created on Mon Nov 25 21:14:25 2019
 @author: Jason
 """
 
-from models.Database import mongo
+from utilities.Database import mongo
 from datetime import datetime
 
 class GameModel():
