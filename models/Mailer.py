@@ -6,6 +6,7 @@ Created on Wed Jan  8 14:11:00 2020
 """
 
 from flask_mail import Mail, Message
+from models.Logger import Logger
 
 mail = Mail()
 
@@ -14,4 +15,15 @@ class Emailer:
         msg = Message(subject, sender=sender, recipients=recipients)
         msg.body = text_body
         msg.html = html_body
-        mail.send(msg)
+        
+        exceptionMessage = ''
+        
+        try:
+            mail.send(msg)
+        except Exception as ex:
+            exceptionMessage = ex.message
+        finally:
+            Logger.log_send_email(msg, exceptionMessage)
+            
+            
+            
