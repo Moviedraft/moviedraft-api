@@ -5,9 +5,9 @@ Created on Tue Nov 19 10:03:06 2019
 @author: Jason
 """
 from werkzeug.security import check_password_hash
-from models.Database import mongo
+from utilities.Database import mongo
 
-class User():
+class UserModel():
     def __init__(self, username, firstName, lastName, email, profilePic, role):
         self.username = username
         self.firstName = firstName

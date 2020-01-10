@@ -10,12 +10,12 @@ import os
 from flask import Flask, session
 from flask_cors import CORS
 from datetime import timedelta
-from models.Database import mongo
-from models.WebApplicationClient import client
-from models.LoginManager import login
-from models.RestApi import restApi
-from models.Mailer import mail
-from models.Executor import executor
+from utilities.Database import mongo
+from utilities.WebApplicationClient import client
+from utilities.LoginManager import login
+from utilities.RestApi import restApi
+from utilities.Mailer import mail
+from utilities.Executor import executor
 from namespaces.Movies import movies_namespace
 from namespaces.Authentication import login_namespace
 from namespaces.Authentication import logout_namespace
@@ -26,6 +26,7 @@ sys.path.insert(0, '/models/')
 sys.path.insert(1, '/namespaces/')
 sys.path.insert(2, '/enums/')
 sys.path.insert(2, '/decorators/')
+sys.path.insert(3, '/utilities/')
 
 application = app = Flask(__name__)
 

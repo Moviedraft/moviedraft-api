@@ -9,7 +9,7 @@ from flask import request, make_response, jsonify
 from flask_login import login_required
 from flask_restplus import Namespace, Resource, fields
 from datetime import datetime
-from models.Database import mongo
+from utilities.Database import mongo
 from models.MovieModel import MovieModel
 from enums.MovieReleaseType import MovieReleaseType
 from decorators.RoleAccessDecorator import requires_role

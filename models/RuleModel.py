@@ -5,7 +5,7 @@ Created on Thu Dec  5 13:04:11 2019
 @author: Jason
 """
 
-from models.Database import mongo
+from utilities.Database import mongo
 
 class RuleModel():
     def __init__(self, ruleName, rules):

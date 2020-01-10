@@ -9,9 +9,9 @@ from flask import request, abort, make_response, jsonify
 from flask import current_app as app
 from flask_login import login_user, logout_user, login_required
 from flask_restplus import Namespace, Resource, fields
-from models.User import User
-from models.Database import mongo
-from models.WebApplicationClient import client
+from models.UserModel import UserModel
+from utilities.Database import mongo
+from utilities.WebApplicationClient import client
 from decorators.RoleAccessDecorator import requires_role
 from enums.Role import Role
 import json
@@ -96,7 +96,7 @@ class LoginCallback(Resource):
                 })
             storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
         
-        userModel = User(username=storedUser['username'], 
+        userModel = UserModel(username=storedUser['username'], 
                     firstName=storedUser['firstName'], 
                     lastName=storedUser['lastName'], 
                     email=storedUser['emailAddress'], 

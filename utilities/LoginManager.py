@@ -6,8 +6,8 @@ Created on Tue Dec  3 11:10:32 2019
 """
 
 from flask_login import LoginManager
-from models.Database import mongo
-from models.User import User
+from utilities.Database import mongo
+from models.UserModel import UserModel
 
 login = LoginManager()
 
@@ -16,7 +16,7 @@ def load_user(username):
     user = mongo.db.users.find_one({'username': username})
     if not user:
         return None
-    return User(
+    return UserModel(
             username=user['username'],
             firstName = user['firstName'],
             lastName = user['lastName'],
