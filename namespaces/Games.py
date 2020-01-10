@@ -84,14 +84,13 @@ class CreateGames(Resource):
             else:
                 playerIds.append(email)
                 recipientName = email.split('@')[0]
-                
+
             executor.submit(Emailer.send_email, 
                                  'Invitation to Moviedraft', 
                                  app.config['MAIL_USERNAME'], 
                                  [email],
                                  None,
-                                 render_template('InviteToGame.html', recipientName=recipientName, user=current_user)
-                                 )
+                                 render_template('InviteToGame.html', recipientName=recipientName, user=current_user))
             
             game = GameModel(
                     gameName=jsonData['gameName'],
