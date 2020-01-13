@@ -14,7 +14,6 @@ login = LoginManager()
 
 @login.user_loader
 def load_user(id):
-    print(id)
     user = mongo.db.users.find_one({'_id': ObjectId(id)})
     if not user:
         return None
