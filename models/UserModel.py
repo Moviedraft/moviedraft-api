@@ -28,10 +28,6 @@ class UserModel():
     def is_anonymous():
         return False
     
-    @staticmethod
-    def validate_login(password_hash, password):
-        return check_password_hash(password_hash, password)
-
     def get_id(self):
         return self.id
 
