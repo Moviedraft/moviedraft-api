@@ -85,13 +85,6 @@ class CreateGames(Resource):
                 playerIds.append(email)
                 recipientName = email.split('@')[0]
 
-            executor.submit(Emailer.send_email, 
-                                 'Invitation to Moviedraft', 
-                                 app.config['MAIL_USERNAME'], 
-                                 [email],
-                                 None,
-                                 render_template('InviteToGame.html', recipientName=recipientName, user=current_user))
-            
             game = GameModel(
                     gameName=jsonData['gameName'],
                     gameNameLowerCase=jsonData['gameName'].lower(),
@@ -110,6 +103,14 @@ class CreateGames(Resource):
         
         result = mongo.db.games.insert_one(game.__dict__)
         
+        for email in playerEmailsJson:
+            executor.submit(Emailer.send_email, 
+                                 'Invitation to Moviedraft', 
+                                 app.config['MAIL_USERNAME'], 
+                                 [email],
+                                 None,
+                                 render_template('InviteToGame.html', recipientName=recipientName, user=current_user))
+            
         return make_response(jsonify(id=str(result.inserted_id)), 200)
     
 @games_namespace.route('/<string:gameName>')
