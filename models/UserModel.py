@@ -4,7 +4,6 @@ Created on Tue Nov 19 10:03:06 2019
 
 @author: Jason
 """
-from werkzeug.security import check_password_hash
 
 class UserModel():
     def __init__(self, id, userHandle, firstName, lastName, email, picture, role):
