@@ -5,7 +5,7 @@ Created on Mon Nov 25 20:16:39 2019
 @author: Jason
 """
 
-from flask import request, abort, make_response, jsonify, render_template
+from flask import request, abort, make_response, jsonify, render_template, session
 from flask import current_app as app
 from flask_login import login_required, current_user
 from flask_restplus import Namespace, Resource, fields
@@ -18,7 +18,6 @@ from utilities.Executor import executor
 from models.GameModel import GameModel
 from models.RuleModel import RuleModel
 from models.MovieModel import MovieModel
-from models.UserModel import UserModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
 from decorators.RoleAccessDecorator import requires_role
@@ -64,8 +63,6 @@ class CreateGames(Resource):
     @games_namespace.response(409, 'Conflict')
     @games_namespace.response(500, 'Internal Server Error')
     def post(self):
-        currentUserId = UserModel.get_user_id(current_user.username)
-
         jsonDump = json.dumps(request.get_json(force=True))
         jsonData = json.loads(jsonDump)
         rulesArray = []
@@ -94,7 +91,7 @@ class CreateGames(Resource):
                     dollarSpendingCap=jsonData['dollarSpendingCap'],
                     movies=jsonData['movies'],
                     rules=rulesArray,
-                    commissionerId=currentUserId,
+                    commissionerId=session['user_id'],
                     playerIds=playerIds
                     )
 

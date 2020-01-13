@@ -19,11 +19,13 @@ import requests
 
 login_namespace = Namespace('login', description='Site login using Google Oauth2.')
 
-login_namespace.model('User',{ 
+login_namespace.model('User',{
+        'id': fields.String,
+        'userHandle': fields.String,
         'firstName': fields.String,
         'lastName': fields.String,
         'email': fields.String,
-        'profilePic': fields.String,
+        'picture': fields.String,
         'role': fields.Integer
         })
 
@@ -87,24 +89,26 @@ class LoginCallback(Resource):
     
         if not storedUser:
             mongo.db.users.insert_one({
-                'username': userEmail, 
+                'userHandle': userEmail.split('@')[0], 
                 'firstName': firstName,
                 'lastName': lastName,
                 'emailAddress': userEmail, 
                 'picture': picture,
                 'role': 1
                 })
+    
             storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
-        
-        userModel = UserModel(username=storedUser['username'], 
+
+        userModel = UserModel(id=str(storedUser['_id']),
+                    userHandle=storedUser['userHandle'], 
                     firstName=storedUser['firstName'], 
                     lastName=storedUser['lastName'], 
                     email=storedUser['emailAddress'], 
-                    profilePic=storedUser['picture'],
+                    picture=storedUser['picture'],
                     role=storedUser['role'])
         
         login_user(userModel)
-    
+
         return make_response(userModel.__dict__, 200)
 
 logout_namespace = Namespace('logout', description='Site logout.')
