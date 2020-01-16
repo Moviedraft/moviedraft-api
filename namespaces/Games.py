@@ -8,7 +8,7 @@ Created on Mon Nov 25 20:16:39 2019
 from flask import request, abort, make_response, jsonify, render_template, session
 from flask import current_app as app
 from flask_login import login_required, current_user
-from flask_restplus import Namespace, Resource, fields
+from flask_restplus import Namespace, Resource, fields, reqparse
 from datetime import datetime
 from bson.objectid import ObjectId
 import json
@@ -25,13 +25,13 @@ from enums.Role import Role
 
 games_namespace = Namespace('games', description='Draft league game data.')
 
-games_namespace.model('GamePayload', {
+gamePayload = games_namespace.model('GamePayload', {
         'gameName': fields.String,
         'startDate': fields.String,
         'endDate': fields.String,
         'playerBuyIn': fields.Integer,
         'dollarSpendingCap': fields.Integer,
-        'playerEmails': fields.List(fields.String),
+        'playerIds': fields.List(fields.String),
         'movies': fields.List(fields.String),
         'rules': fields.Nested(rules_namespace.models['Rules'])
         })
@@ -79,7 +79,7 @@ class CreateGames(Resource):
                 playerIds.append(str(player['_id']))
                 recipientName = player['firstName']
             else:
-                playerIds.append(email)
+                playerIds.append(email.lower())
                 recipientName = email.split('@')[0]
 
             game = GameModel(
@@ -95,7 +95,7 @@ class CreateGames(Resource):
                     playerIds=playerIds
                     )
 
-        if not GameModel.load_game(game.gameName.lower()) == None:
+        if not GameModel.load_game(game.gameNameLowerCase) == None:
             abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(game.gameName)), 409))
         
         result = mongo.db.games.insert_one(game.__dict__)
@@ -164,3 +164,70 @@ class Game(Resource):
             except:
                 abort(make_response(jsonify('Game name: \'{}\' could not be deleted'.format(gameName)), 500))
         abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
+    
+    @login_required
+    @requires_role(Role.user.value)
+    @games_namespace.expect(gamePayload)
+    @games_namespace.response(200, 'Success', games_namespace.models['Game'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def put(self, gameName):
+        parser = reqparse.RequestParser()
+        parser.add_argument('gameName', required=True)
+        parser.add_argument('startDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d'), required=True)
+        parser.add_argument('endDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d'), required=True)
+        parser.add_argument('playerBuyIn', type=int, required=True)
+        parser.add_argument('dollarSpendingCap', type=int, required=True)
+        parser.add_argument('playerIds', type=list, location='json', required=True)
+        parser.add_argument('movies', type=list, location='json', required=True)
+        parser.add_argument('rules', type=list, location='json', required=True)
+        args = parser.parse_args()
+        
+        existingGame = GameModel.load_game(gameName.lower())
+        
+        if not existingGame:
+            abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
+        
+        playerIds = []
+        for value in args['playerIds'] or []:
+            player = mongo.db.users.find_one({'emailAddress': value.lower()}, {'_id':1})
+            if player:
+                playerIds.append(str(player['_id']))
+            else:
+                playerIds.append(value)
+                recipientName = value.split('@')[0]
+                executor.submit(Emailer.send_email, 
+                                 'Invitation to Moviedraft', 
+                                 app.config['MAIL_USERNAME'], 
+                                 [value],
+                                 None,
+                                 render_template('InviteToGame.html', recipientName=recipientName, user=current_user))
+        args['playerIds'] = playerIds
+        
+        movieIds = []
+        for value in args['movies'] or []:
+            movie = mongo.db.movies.find_one({'_id': ObjectId(value)}, {'_id':1})
+            if movie:
+                movieIds.append(str(movie['_id']))
+        args['movies'] = movieIds
+
+        for key, value in args.items():
+            setattr(existingGame, key, value or getattr(existingGame, key))
+            if key == 'gameName':
+                setattr(existingGame, 'gameNameLowerCase', value.lower())
+                
+        ruleArray = []
+        for value in args['rules'] or []:
+            existingRule = mongo.db.rules.find_one({'ruleName': value['ruleName']}, {'_id':1})
+            if existingRule:
+                ruleArray.append(value)
+        print(ruleArray)
+        args['rules'] = ruleArray
+        
+        mongo.db.games.replace_one({'gameName': gameName}, existingGame.__dict__)
+        updatedGame = GameModel.load_game(existingGame.gameNameLowerCase)
+        
+        return make_response(updatedGame.__dict__, 200)
+    
+    
