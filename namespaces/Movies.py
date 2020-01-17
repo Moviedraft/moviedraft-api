@@ -37,6 +37,9 @@ class Movies(Resource):
     @movies_namespace.response(200, 'Success', movies_namespace.models['Movies'])
     @movies_namespace.response(500, 'Internal Server Error')
     @movies_namespace.response(401, 'Authentication Error') 
+    @movies_namespace.doc(params={'startDate': 'Earliest date of movie releases (YYYY-mm-dd).',
+                                  'endDate': 'Latest date of movie releases (YYYY-mm-dd).',
+                                  'releaseType': 'wide, limited'})
     def get(self):
         movies = []
         releaseType = request.args.get('releaseType')
