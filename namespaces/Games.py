@@ -170,6 +170,7 @@ class Game(Resource):
     @games_namespace.expect(gamePayload)
     @games_namespace.response(200, 'Success', games_namespace.models['Game'])
     @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(403, 'Forbidden')
     @games_namespace.response(404, 'Not Found')
     @games_namespace.response(500, 'Internal Server Error')
     def put(self, gameName):
@@ -188,6 +189,9 @@ class Game(Resource):
         
         if not existingGame:
             abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
+            
+        if existingGame.commissionerId != current_user.id:
+            abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
         
         playerIds = []
         for value in args['playerIds'] or []:
@@ -214,7 +218,7 @@ class Game(Resource):
 
         for key, value in args.items():
             setattr(existingGame, key, value or getattr(existingGame, key))
-            if key == 'gameName':
+            if key.lower() == 'gamename':
                 setattr(existingGame, 'gameNameLowerCase', value.lower())
                 
         ruleArray = []
@@ -222,7 +226,6 @@ class Game(Resource):
             existingRule = mongo.db.rules.find_one({'ruleName': value['ruleName']}, {'_id':1})
             if existingRule:
                 ruleArray.append(value)
-        print(ruleArray)
         args['rules'] = ruleArray
         
         mongo.db.games.replace_one({'gameName': gameName}, existingGame.__dict__)
