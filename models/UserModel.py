@@ -6,6 +6,7 @@ Created on Tue Nov 19 10:03:06 2019
 """
 
 from utilities.Database import mongo
+from bson.objectid import ObjectId
 
 class UserModel():
     def __init__(self, id, userHandle, firstName, lastName, email, picture, role):
@@ -36,6 +37,14 @@ class UserModel():
         return self.role >= requiredRole
 
     @classmethod
+    def load_user_by_id(cls, id):
+        if not ObjectId.is_valid(id):
+            return None
+        queryDict = {'_id': ObjectId(id)}
+        user = cls.load_user(queryDict)  
+        return user
+
+    @classmethod
     def load_user_by_email(cls, email):
         queryDict = {'emailAddress': email.lower()}
         user = cls.load_user(queryDict)  
@@ -46,13 +55,11 @@ class UserModel():
         user = mongo.db.users.find_one(queryDict)
         if not user:
             return None
-        return UserModel(
-                id = str(user['_id']),
+        return UserModel(id = str(user['_id']),
                 userHandle = user['userHandle'],
                 firstName = user['firstName'],
                 lastName = user['lastName'],
                 email = user['emailAddress'],
                 picture = user['picture'],
-                role = user['role']
-                )
+                role = user['role'])
     
