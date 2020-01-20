@@ -28,19 +28,19 @@ class UserModel():
     @staticmethod
     def is_anonymous():
         return False
-        
+
     def get_id(self):
         return self.id
-    
+
     def allowed(self, requiredRole):
         return self.role >= requiredRole
-    
+
     @classmethod
     def load_user_by_email(cls, email):
         queryDict = {'emailAddress': email.lower()}
         user = cls.load_user(queryDict)  
         return user
-    
+
     @classmethod
     def load_user(cls, queryDict):
         user = mongo.db.users.find_one(queryDict)
@@ -55,5 +55,4 @@ class UserModel():
                 picture = user['picture'],
                 role = user['role']
                 )
-    
     
