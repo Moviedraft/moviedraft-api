@@ -110,7 +110,10 @@ class CreateGames(Resource):
                                  app.config['MAIL_USERNAME'], 
                                  [email],
                                  None,
-                                 render_template('InviteToGame.html', recipientName=recipientDict[email], user=current_user))
+                                 render_template('InviteToGame.html', 
+                                                 recipientName=recipientDict[email], 
+                                                 user=current_user,
+                                                 gameName=game.gameName))
             
         return make_response(jsonify(id=str(result.inserted_id)), 200)
     
@@ -219,7 +222,10 @@ class Game(Resource):
                                 app.config['MAIL_USERNAME'], 
                                 [email],
                                 None,
-                                render_template('InviteToGame.html', recipientName=recipientName, user=current_user))
+                                render_template('InviteToGame.html', 
+                                                recipientName=recipientName, 
+                                                user=current_user,
+                                                gameName=existingGame.gameName))
             
         args['playerIds'] = playerIds
         
