@@ -18,6 +18,7 @@ from utilities.Executor import executor
 from models.GameModel import GameModel
 from models.RuleModel import RuleModel
 from models.MovieModel import MovieModel
+from models.UserModel import UserModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
 from decorators.RoleAccessDecorator import requires_role
@@ -72,15 +73,18 @@ class CreateGames(Resource):
             rulesArray.append(ruleModel.__dict__)
         
         playerIds = []
+        recipientDict = {}
         playerEmailsJson = jsonData['playerEmails']
         for email in playerEmailsJson:   
-            player = mongo.db.users.find_one({'emailAddress': email}, {'_id':1, 'firstName':1})
+            player = UserModel.load_user_by_email(email)
             if player:
-                playerIds.append(str(player['_id']))
-                recipientName = player['firstName']
+                playerIds.append(player.id)
+                recipientName = player.firstName
+                recipientDict[email] = recipientName
             else:
                 playerIds.append(email.lower())
                 recipientName = email.split('@')[0]
+                recipientDict[email] = recipientName
 
             game = GameModel(
                     gameName=jsonData['gameName'],
@@ -106,7 +110,7 @@ class CreateGames(Resource):
                                  app.config['MAIL_USERNAME'], 
                                  [email],
                                  None,
-                                 render_template('InviteToGame.html', recipientName=recipientName, user=current_user))
+                                 render_template('InviteToGame.html', recipientName=recipientDict[email], user=current_user))
             
         return make_response(jsonify(id=str(result.inserted_id)), 200)
     
@@ -195,18 +199,28 @@ class Game(Resource):
         
         playerIds = []
         for value in args['playerIds'] or []:
-            player = mongo.db.users.find_one({'emailAddress': value.lower()}, {'_id':1})
+            sendMail = False
+            player = UserModel.load_user_by_email(value)
             if player:
-                playerIds.append(str(player['_id']))
+                playerIds.append(player.id)
+                if player.id not in existingGame.playerIds:
+                    recipientName = player.firstName
+                    email = player.email
+                    sendMail = True
             else:
                 playerIds.append(value)
                 recipientName = value.split('@')[0]
-                executor.submit(Emailer.send_email, 
-                                 'Invitation to Moviedraft', 
-                                 app.config['MAIL_USERNAME'], 
-                                 [value],
-                                 None,
-                                 render_template('InviteToGame.html', recipientName=recipientName, user=current_user))
+                email = value
+                sendMail = True
+            
+            if sendMail:
+                executor.submit(Emailer.send_email,
+                                'Invitation to Moviedraft', 
+                                app.config['MAIL_USERNAME'], 
+                                [email],
+                                None,
+                                render_template('InviteToGame.html', recipientName=recipientName, user=current_user))
+            
         args['playerIds'] = playerIds
         
         movieIds = []
