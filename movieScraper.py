@@ -10,15 +10,17 @@ Created on Tue Nov 26 11:20:36 2019
 #     The connection string to MongoDB
 #     The database name
 #     The file path for ChromeDriver
+#     The URL being used for scraping
 # =============================================================================
     
 class Movie:
-    def __init__(self, releaseDate, title, releaseType, distributor, url):
+    def __init__(self, releaseDate, title, releaseType, distributor, url, domesticGross):
         self.releaseDate = releaseDate
         self.title = title
         self.releaseType = releaseType
         self.distributor = distributor
         self.url = url
+        self.domesticGross = domesticGross
         self.lastUpdated = datetime.strptime(datetime.today().isoformat() , '%Y-%m-%dT%H:%M:%S.%f')     
 
 from selenium import webdriver
@@ -33,7 +35,7 @@ options = webdriver.ChromeOptions()
 options.add_argument('headless')
 
 driver = webdriver.Chrome(sys.argv[3], options=options)
-driver.get('https://www.the-numbers.com/movies/release-schedule')
+driver.get(sys.argv[4])
 
 table = driver.find_element_by_xpath('//div[@id=\'page_filling_chart\']/table/tbody')
 
@@ -74,10 +76,14 @@ for row in movieArray:
     movieUrlElement = table.find_element_by_partial_link_text(title)
     url = movieUrlElement.get_property('href')
     
-    movie = Movie(releaseDate, title, releaseType.lower(), row[2], url)
+    movie = Movie(releaseDate, title, releaseType.lower(), row[2], url, 0)
     
     existingMovie = db.movies.find_one({"url": url})
     if existingMovie:
+        try:
+            movie.domesticGross = existingMovie['domesticGross']
+        except KeyError:
+            pass
         db.movies.replace_one(existingMovie, movie.__dict__)
         print('Replaced movie title: {}'.format(movie.title))
     else:
