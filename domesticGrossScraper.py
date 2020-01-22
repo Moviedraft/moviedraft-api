@@ -25,17 +25,20 @@ options.add_argument('headless')
 
 driver = webdriver.Chrome(sys.argv[3], options=options)
 
-today = datetime.strptime(datetime.today().isoformat() , '%Y-%m-%dT%H:%M:%S.%f')
-
-movies = db.movies.find({}, {'title':1, 'url':1, 'lastUpdated':1, '_id':1})
+movies = db.movies.find({}, {'title':1, 'url':1, 'releaseDate':1, '_id':1})
 
 for movie in movies:
+    if movie['releaseDate'] >= datetime.today():
+        print('Skipping \'{}\': not released.'.format(movie['title']))
+        continue
     driver.get(movie['url'])
     domesticGrossTable = driver.find_element_by_id('movie_finances')
     domesticGross = domesticGrossTable.find_elements_by_class_name('data')[0].text
     formattedDomesticGross = int(domesticGross[1:].replace(',',''))
     
-    db.movies.update_one({'_id': movie['_id']},  {'$set': {'domesticGross': formattedDomesticGross, 'lastUpdated': today }})
+    db.movies.update_one({'_id': movie['_id']},  
+                          {'$set': {'domesticGross': formattedDomesticGross, 
+                                    'lastUpdated': datetime.strptime(datetime.today().isoformat() , '%Y-%m-%dT%H:%M:%S.%f') }})
     
     print('Movie title: \'{}\' updated'.format(movie['title']))
     
