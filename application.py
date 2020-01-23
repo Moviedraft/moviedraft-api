@@ -7,7 +7,7 @@ Created on Tue Nov 19 08:45:14 2019
 
 import sys
 import os
-from flask import Flask, session
+from flask import Flask, session, request
 from flask_cors import CORS
 from datetime import timedelta
 from utilities.Database import mongo
@@ -64,6 +64,10 @@ restApi.add_namespace(users_namespace)
 def before_request():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=int(app.config['SESSION_TIMEOUT_MINUTES']))
+
+@app.before_request
+def set_domain_session():
+    session['domain'] = request.headers['Host']
 
 if __name__ == '__main__':
     app.run()
