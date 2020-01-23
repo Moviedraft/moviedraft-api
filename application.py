@@ -43,6 +43,7 @@ app.config['MAIL_USE_SSL'] = os.environ['MAIL_USE_SSL']
 app.config['MAIL_USERNAME'] = os.environ['MAIL_USERNAME']
 app.config['MAIL_PASSWORD'] = os.environ['MAIL_PASSWORD']
 app.config['FRONTEND_REDIRECT_URI'] = os.environ['FRONTEND_REDIRECT_URI']
+app.config['SERVER_NAME'] = os.environ['SERVER_NAME']
 
 mongo.init_app(app)
 login.init_app(app)
@@ -64,10 +65,6 @@ restApi.add_namespace(users_namespace)
 def before_request():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=int(app.config['SESSION_TIMEOUT_MINUTES']))
-
-@app.before_request
-def set_domain_session():
-    session['domain'] = request.headers['Host']
 
 if __name__ == '__main__':
     app.run()
