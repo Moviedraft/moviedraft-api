@@ -21,6 +21,7 @@ from namespaces.Authentication import login_namespace
 from namespaces.Authentication import logout_namespace
 from namespaces.Games import games_namespace
 from namespaces.Rules import rules_namespace
+from namespaces.Users import users_namespace
 
 sys.path.insert(0, '/models/')
 sys.path.insert(1, '/namespaces/')
@@ -41,6 +42,7 @@ app.config['MAIL_PORT'] = os.environ['MAIL_PORT']
 app.config['MAIL_USE_SSL'] = os.environ['MAIL_USE_SSL']
 app.config['MAIL_USERNAME'] = os.environ['MAIL_USERNAME']
 app.config['MAIL_PASSWORD'] = os.environ['MAIL_PASSWORD']
+app.config['FRONTEND_REDIRECT_URI'] = os.environ['FRONTEND_REDIRECT_URI']
 
 mongo.init_app(app)
 login.init_app(app)
@@ -56,6 +58,7 @@ restApi.add_namespace(login_namespace)
 restApi.add_namespace(logout_namespace)
 restApi.add_namespace(games_namespace)
 restApi.add_namespace(rules_namespace)
+restApi.add_namespace(users_namespace)
 
 @app.before_request
 def before_request():
