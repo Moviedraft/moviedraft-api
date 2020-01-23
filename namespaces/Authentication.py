@@ -5,7 +5,7 @@ Created on Tue Nov 19 13:45:07 2019
 @author: Jason
 """
 
-from flask import request, abort, make_response, jsonify
+from flask import request, abort, make_response, jsonify, redirect
 from flask import current_app as app
 from flask_login import login_user, logout_user, login_required
 from flask_restplus import Namespace, Resource, fields
@@ -109,7 +109,7 @@ class LoginCallback(Resource):
         
         login_user(userModel)
 
-        return make_response(userModel.__dict__, 200)
+        return redirect(app.config['FRONTEND_REDIRECT_URI'], code=302)
 
 logout_namespace = Namespace('logout', description='Site logout.')
 
