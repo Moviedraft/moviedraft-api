@@ -43,7 +43,6 @@ app.config['MAIL_USE_SSL'] = os.environ['MAIL_USE_SSL']
 app.config['MAIL_USERNAME'] = os.environ['MAIL_USERNAME']
 app.config['MAIL_PASSWORD'] = os.environ['MAIL_PASSWORD']
 app.config['FRONTEND_REDIRECT_URI'] = os.environ['FRONTEND_REDIRECT_URI']
-app.config['SERVER_NAME'] = os.environ['SERVER_NAME']
 
 mongo.init_app(app)
 login.init_app(app)

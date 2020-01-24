@@ -5,7 +5,7 @@ Created on Tue Nov 19 13:45:07 2019
 @author: Jason
 """
 
-from flask import request, abort, make_response, jsonify, redirect
+from flask import request, abort, make_response, jsonify
 from flask import current_app as app
 from flask_login import login_user, logout_user, login_required
 from flask_restplus import Namespace, Resource, fields
@@ -31,6 +31,10 @@ login_namespace.model('User',{
 
 login_namespace.model('RequestAuthUriModel',{ 
         'requestUri': fields.String
+        })
+
+login_namespace.model('UserIdToken',{ 
+        'id_token': fields.String
         })
 
 @login_namespace.route('')
@@ -109,8 +113,54 @@ class LoginCallback(Resource):
         
         login_user(userModel)
 
-        return redirect(app.config['FRONTEND_REDIRECT_URI'], code=302)
+        return make_response(userModel.__dict__, 200)
 
+@login_namespace.route('/validate')
+class loginValidate(Resource):
+    @login_namespace.response(200, 'Success', login_namespace.models['User'])
+    @login_namespace.response(500, 'Internal Server Error')
+    @login_namespace.doc(params={'id_token': 'Token retrieved from Google.'})
+    def get(self):
+        token = request.args.get('id_token')
+        
+        tokenValidateUrl = 'https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={}'.format(token)
+        
+        tokenResponse = requests.get(tokenValidateUrl)
+
+        if tokenResponse.json().get('email_verified'):
+            userEmail = tokenResponse.json()['email']
+            picture = tokenResponse.json()['picture']
+            firstName = tokenResponse.json()['given_name']
+            lastName = tokenResponse.json()['family_name']
+        else:
+            return abort(make_response(jsonify(message='User email not available or not verified by Google.'), 500))
+        
+        storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
+    
+        if not storedUser:
+            mongo.db.users.insert_one({
+                'userHandle': userEmail.split('@')[0], 
+                'firstName': firstName,
+                'lastName': lastName,
+                'emailAddress': userEmail, 
+                'picture': picture,
+                'role': 1
+                })
+    
+            storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
+
+        userModel = UserModel(id=str(storedUser['_id']),
+                    userHandle=storedUser['userHandle'], 
+                    firstName=storedUser['firstName'], 
+                    lastName=storedUser['lastName'], 
+                    email=storedUser['emailAddress'], 
+                    picture=storedUser['picture'],
+                    role=storedUser['role'])
+        
+        login_user(userModel)
+
+        return make_response(userModel.__dict__, 200)
+        
 logout_namespace = Namespace('logout', description='Site logout.')
 
 @logout_namespace.route('')
