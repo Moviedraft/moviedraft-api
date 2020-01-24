@@ -123,7 +123,7 @@ class loginValidate(Resource):
         
         tokenResponse = requests.get(tokenValidateUrl)
 
-        if tokenResponse.json().get('email_verified'):
+        if tokenResponse.json()['email_verified']:
             userEmail = tokenResponse.json()['email']
             picture = tokenResponse.json()['picture']
             firstName = tokenResponse.json()['given_name']
