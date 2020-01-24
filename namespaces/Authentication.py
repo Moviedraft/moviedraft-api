@@ -83,7 +83,7 @@ class LoginCallback(Resource):
             lastName = userinfo_response.json()['family_name']
         
         else:
-            return abort(make_response(jsonify(message='User email not available or not verified by Google.'), 500))
+            abort(make_response(jsonify(message='User email not available or not verified by Google.'), 500))
     
         storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
     
@@ -129,7 +129,7 @@ class loginValidate(Resource):
             firstName = tokenResponse.json()['given_name']
             lastName = tokenResponse.json()['family_name']
         else:
-            return abort(make_response(jsonify(message='User email not available or not verified by Google.'), 500))
+            abort(make_response(jsonify(message='User email not available or not verified by Google.'), 500))
         
         storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
     
