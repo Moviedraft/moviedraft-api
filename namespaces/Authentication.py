@@ -122,7 +122,10 @@ class loginValidate(Resource):
         tokenValidateUrl = app.config['GOOGLE_TOKENINFO_URI'] + token
         
         tokenResponse = requests.get(tokenValidateUrl)
-
+        
+        if tokenResponse.json().get('error_description'):
+            abort(make_response(jsonify(message=tokenResponse.json().get('error_description')), 500))
+        
         if tokenResponse.json().get('email_verified'):
             userEmail = tokenResponse.json().get('email')
             picture = tokenResponse.json().get('picture')
