@@ -118,8 +118,8 @@ class loginValidate(Resource):
     @login_namespace.doc(params={'id_token': 'Token retrieved from Google.'})
     def get(self):
         token = request.args.get('id_token')
-        
-        tokenValidateUrl = 'https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={}'.format(token)
+
+        tokenValidateUrl = app.config['GOOGLE_TOKENINFO_URI'] + token
         
         tokenResponse = requests.get(tokenValidateUrl)
 

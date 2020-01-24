@@ -42,7 +42,7 @@ app.config['MAIL_PORT'] = os.environ['MAIL_PORT']
 app.config['MAIL_USE_SSL'] = os.environ['MAIL_USE_SSL']
 app.config['MAIL_USERNAME'] = os.environ['MAIL_USERNAME']
 app.config['MAIL_PASSWORD'] = os.environ['MAIL_PASSWORD']
-app.config['FRONTEND_REDIRECT_URI'] = os.environ['FRONTEND_REDIRECT_URI']
+app.config['GOOGLE_TOKENINFO_URI'] = os.environ['GOOGLE_TOKENINFO_URI']
 
 mongo.init_app(app)
 login.init_app(app)
