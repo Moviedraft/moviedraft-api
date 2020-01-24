@@ -33,10 +33,6 @@ login_namespace.model('RequestAuthUriModel',{
         'requestUri': fields.String
         })
 
-login_namespace.model('UserIdToken',{ 
-        'id_token': fields.String
-        })
-
 @login_namespace.route('')
 class RequestAuthUri(Resource):
     @login_namespace.response(200, 'Success', login_namespace.models['RequestAuthUriModel'])
