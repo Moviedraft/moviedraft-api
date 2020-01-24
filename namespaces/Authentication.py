@@ -77,10 +77,10 @@ class LoginCallback(Resource):
         userinfo_response = requests.get(uri, headers=headers, data=body)
     
         if userinfo_response.json().get('email_verified'):
-            userEmail = userinfo_response.json()['email']
-            picture = userinfo_response.json()['picture']
-            firstName = userinfo_response.json()['given_name']
-            lastName = userinfo_response.json()['family_name']
+            userEmail = userinfo_response.json().get('email')
+            picture = userinfo_response.json().get('picture')
+            firstName = userinfo_response.json().get('given_name')
+            lastName = userinfo_response.json().get('family_name')
         
         else:
             abort(make_response(jsonify(message='User email not available or not verified by Google.'), 500))
@@ -123,11 +123,11 @@ class loginValidate(Resource):
         
         tokenResponse = requests.get(tokenValidateUrl)
 
-        if tokenResponse.json()['email_verified']:
-            userEmail = tokenResponse.json()['email']
-            picture = tokenResponse.json()['picture']
-            firstName = tokenResponse.json()['given_name']
-            lastName = tokenResponse.json()['family_name']
+        if tokenResponse.json().get('email_verified'):
+            userEmail = tokenResponse.json().get('email')
+            picture = tokenResponse.json().get('picture')
+            firstName = tokenResponse.json().get('given_name')
+            lastName = tokenResponse.json().get('family_name')
         else:
             abort(make_response(jsonify(message='User email not available or not verified by Google.'), 500))
         
