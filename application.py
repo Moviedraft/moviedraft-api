@@ -71,7 +71,6 @@ restApi.add_namespace(users_namespace)
 def before_request():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=int(app.config['SESSION_TIMEOUT_MINUTES']))
-    session['domain'] = request.headers['Host']
     
 @app.after_request
 def after_request(response):
