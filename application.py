@@ -8,6 +8,7 @@ Created on Tue Nov 19 08:45:14 2019
 import sys
 import os
 from flask import Flask, session, request
+from flask.sessions import SecureCookieSessionInterface
 from flask_cors import CORS
 from datetime import timedelta
 from utilities.Database import mongo
@@ -57,6 +58,8 @@ CORS(app, supports_credentials=True, resources={r"/*": {'origins': app.config['W
 
 client.client_id = app.config['GOOGLE_CLIENT_ID']
 
+session_serializer = SecureCookieSessionInterface().get_signing_serializer(app)
+
 restApi.add_namespace(movies_namespace)
 restApi.add_namespace(login_namespace)
 restApi.add_namespace(logout_namespace)
@@ -68,9 +71,20 @@ restApi.add_namespace(users_namespace)
 def before_request():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=int(app.config['SESSION_TIMEOUT_MINUTES']))
+    session['domain'] = request.headers['Host']
     
 @app.after_request
 def after_request(response):
+    session_clone = dict(_fresh=session['_fresh'], 
+                         _id=session['_id'], 
+                         _permanent=session['_permanent'], 
+                         user_id=session['user_id'])
+    session_cookie_data = session_serializer.dumps(session_clone)
+    response.set_cookie('session', 
+                        session_cookie_data, 
+                        max_age=timedelta(minutes=int(app.config['SESSION_TIMEOUT_MINUTES'])),
+                        secure=True,
+                        samesite='Lax')
     response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
     
     return response
