@@ -82,7 +82,7 @@ def after_request(response):
     
     response.headers['Authorization'] = session_cookie_data
     response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
-    
+    response.headers['Access-Control-Expose-Headers'] = 'Authorization, Set-Cookie'
     return response
 
 if __name__ == '__main__':
