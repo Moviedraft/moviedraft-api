@@ -53,7 +53,7 @@ login.init_app(app)
 restApi.init_app(app)
 mail.init_app(app)
 executor.init_app(app)
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:8000"}})
+CORS(app, supports_credentials=True, resources={r"/*": {'origins': app.config['WHITELIST_ORIGIN']}})
 
 client.client_id = app.config['GOOGLE_CLIENT_ID']
 
@@ -71,10 +71,6 @@ def before_request():
     
 @app.after_request
 def after_request(response):
-    white_origin = app.config['WHITELIST_ORIGIN']
-    if 'HTTP_ORIGIN' in request.environ and request.environ['HTTP_ORIGIN']  in white_origin:
-        response.headers['Access-Control-Allow-Origin'] = request.headers['HTTP_ORIGIN'] 
-
     response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
     
     return response
