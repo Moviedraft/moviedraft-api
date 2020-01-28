@@ -8,6 +8,7 @@ Created on Tue Nov 19 08:45:14 2019
 import sys
 import os
 from flask import Flask, session, request
+from flask.sessions import SecureCookieSessionInterface
 from flask_cors import CORS
 from datetime import timedelta
 from utilities.Database import mongo
@@ -37,6 +38,10 @@ app.config['GOOGLE_CLIENT_ID'] = os.environ['GOOGLE_CLIENT_ID']
 app.config['GOOGLE_CLIENT_SECRET'] = os.environ['GOOGLE_CLIENT_SECRET']
 app.config['GOOGLE_DISCOVERY_URL'] = os.environ['GOOGLE_DISCOVERY_URL']
 app.config['SESSION_TIMEOUT_MINUTES'] = os.environ['SESSION_TIMEOUT_MINUTES']
+app.config['SESSION_COOKIE_HTTPONLY'] = os.environ['SESSION_COOKIE_HTTPONLY']
+app.config['SESSION_COOKIE_SAMESITE'] = os.environ['SESSION_COOKIE_SAMESITE']
+app.config['SESSION_COOKIE_SECURE'] = os.environ['SESSION_COOKIE_SECURE']
+app.config['WHITELIST_ORIGIN'] = os.environ['WHITELIST_ORIGIN']
 app.config['MAIL_SERVER'] = os.environ['MAIL_SERVER']
 app.config['MAIL_PORT'] = os.environ['MAIL_PORT']
 app.config['MAIL_USE_SSL'] = os.environ['MAIL_USE_SSL']
@@ -64,6 +69,16 @@ restApi.add_namespace(users_namespace)
 def before_request():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=int(app.config['SESSION_TIMEOUT_MINUTES']))
+    
+@app.after_request
+def after_request(response):
+    white_origin = app.config['WHITELIST_ORIGIN']
+    if 'HTTP_ORIGIN' in request.environ and request.environ['HTTP_ORIGIN']  in white_origin:
+        response.headers['Access-Control-Allow-Origin'] = request.headers['HTTP_ORIGIN'] 
+
+    response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
+    
+    return response
 
 if __name__ == '__main__':
-    app.run()
+    app.run(ssl_context='adhoc')
