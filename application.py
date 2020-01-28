@@ -79,11 +79,8 @@ def after_request(response):
                          _permanent=session['_permanent'], 
                          user_id=session['user_id'])
     session_cookie_data = session_serializer.dumps(session_clone)
-    response.set_cookie('user_session', 
-                        session_cookie_data, 
-                        max_age=timedelta(minutes=int(app.config['SESSION_TIMEOUT_MINUTES'])),
-                        secure=True,
-                        samesite='Lax')
+    
+    response.headers['Authorization'] = session_cookie_data
     response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
     
     return response
