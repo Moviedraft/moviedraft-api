@@ -8,7 +8,6 @@ Created on Tue Nov 19 08:45:14 2019
 import sys
 import os
 from flask import Flask, session, request
-from flask.sessions import SecureCookieSessionInterface
 from flask_cors import CORS
 from datetime import timedelta
 from utilities.Database import mongo
@@ -81,4 +80,4 @@ def after_request(response):
     return response
 
 if __name__ == '__main__':
-    app.run(ssl_context='adhoc')
+    app.run()
