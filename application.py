@@ -69,6 +69,13 @@ restApi.add_namespace(users_namespace)
 
 @app.before_request
 def before_request():
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", 'https://dev.couchsports.ca')
+        response.headers.add('Access-Control-Allow-Headers', 'Authorization')
+        response.headers.add('Access-Control-Allow-Methods', '*')
+        return response
+    
     if 'login' in request.url_rule.rule:
         pass
     elif 'Authorization' in request.headers:
