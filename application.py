@@ -103,6 +103,7 @@ def after_request(response):
         
     response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
     response.headers['Access-Control-Expose-Headers'] = 'Authorization'
+    response.headers['Access-Control-Allow-Headers'] = 'Authorization'
     
     return response
 
