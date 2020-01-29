@@ -7,10 +7,10 @@ Created on Tue Nov 19 08:45:14 2019
 
 import sys
 import os
-from flask import Flask, session, request
+from flask import Flask, session, request, abort, make_response, jsonify
 from flask.sessions import SecureCookieSessionInterface
 from flask_cors import CORS
-from datetime import timedelta
+from datetime import timedelta, datetime
 from utilities.Database import mongo
 from utilities.WebApplicationClient import client
 from utilities.LoginManager import login
@@ -69,20 +69,41 @@ restApi.add_namespace(users_namespace)
 
 @app.before_request
 def before_request():
+    if 'login' in request.url_rule.rule:
+        pass
+    elif 'Authorization' in request.headers:
+            loaded_session = session_serializer.loads(request.headers['Authorization'])
+            session['_fresh']=loaded_session['_fresh']
+            session['_id']=loaded_session['_id']
+            session['_permanent']=loaded_session['_permanent']
+            session['user_id']=loaded_session['user_id']
+            session['last_active']=loaded_session['last_active']
+            
+            delta = datetime.now() - session['last_active']
+            if delta.seconds/60 > int(app.config['SESSION_TIMEOUT_MINUTES']):
+                abort(make_response(jsonify(message='You are not longer logged into the system. Please log in again'), 401))
+    else:
+        abort(make_response(jsonify(message='Bad Request: Missing header'), 400))
+
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=int(app.config['SESSION_TIMEOUT_MINUTES']))
     
 @app.after_request
 def after_request(response):
-    session_clone = dict(_fresh=session['_fresh'], 
-                         _id=session['_id'], 
-                         _permanent=session['_permanent'], 
-                         user_id=session['user_id'])
-    session_cookie_data = session_serializer.dumps(session_clone)
-    
-    response.headers['Authorization'] = session_cookie_data
+    if 'logout' in request.url_rule.rule:
+        pass
+    elif '_id' in session:
+            session_clone = dict(_fresh=session['_fresh'], 
+                                 _id=session['_id'], 
+                                 _permanent=session['_permanent'], 
+                                 user_id=session['user_id'],
+                                 last_active=datetime.now())
+            session_cookie_data = session_serializer.dumps(session_clone)
+            response.headers['Authorization'] = session_cookie_data
+        
     response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
-    response.headers['Access-Control-Expose-Headers'] = 'Authorization, Set-Cookie'
+    response.headers['Access-Control-Expose-Headers'] = 'Authorization'
+    
     return response
 
 if __name__ == '__main__':
