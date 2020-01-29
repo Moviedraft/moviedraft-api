@@ -71,7 +71,7 @@ restApi.add_namespace(users_namespace)
 def before_request():
     if request.method == "OPTIONS":
         response = make_response()
-        response.headers.add("Access-Control-Allow-Origin", 'https://dev.couchsports.ca')
+        response.headers.add("Access-Control-Allow-Origin", os.environ['WHITELIST_ORIGIN'])
         response.headers.add('Access-Control-Allow-Headers', 'Authorization')
         response.headers.add('Access-Control-Allow-Methods', '*')
         return response
