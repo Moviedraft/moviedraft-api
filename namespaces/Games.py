@@ -21,7 +21,7 @@ from models.MovieModel import MovieModel
 from models.UserModel import UserModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
-from decorators.RoleAccessDecorator import requires_role
+from decorators.RoleAccessDecorator import requires_admin
 from enums.Role import Role
 
 games_namespace = Namespace('games', description='Draft league game data.')
@@ -56,7 +56,6 @@ games_namespace.model('Game', {
 @games_namespace.route('')
 class CreateGames(Resource):
     @login_required
-    @requires_role(Role.user.value)
     @games_namespace.expect(games_namespace.models['GamePayload'])
     @games_namespace.response(200, 'Success', games_namespace.models['GamePostResponse'])
     @games_namespace.response(401, 'Authentication Error')
@@ -120,7 +119,6 @@ class CreateGames(Resource):
 @games_namespace.route('/<string:gameName>')
 class Game(Resource):
     @login_required
-    @requires_role(Role.user.value)
     @games_namespace.response(200, 'Success', games_namespace.models['Game'])
     @games_namespace.response(401, 'Authentication Error')
     @games_namespace.response(404, 'Not Found')
@@ -157,7 +155,7 @@ class Game(Resource):
         abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
 
     @login_required
-    @requires_role(Role.admin.value)
+    @requires_admin
     @games_namespace.response(200, 'Success')
     @games_namespace.response(401, 'Authentication Error')
     @games_namespace.response(404, 'Not Found')
@@ -173,7 +171,6 @@ class Game(Resource):
         abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
     
     @login_required
-    @requires_role(Role.user.value)
     @games_namespace.expect(gamePayload)
     @games_namespace.response(200, 'Success', games_namespace.models['Game'])
     @games_namespace.response(401, 'Authentication Error')
