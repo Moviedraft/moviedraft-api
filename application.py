@@ -51,7 +51,7 @@ restApi.init_app(app)
 mail.init_app(app)
 executor.init_app(app)
 jwt.init_app(app)
-CORS(app, supports_credentials=True, resources={r"/*": {'origins': [app.config['WHITELIST_ORIGINS'].split(';')]}})
+CORS(app, supports_credentials=True, resources={r"/*": {'origins': app.config['WHITELIST_ORIGINS'].split(';')}})
 
 client.client_id = app.config['GOOGLE_CLIENT_ID']
 
