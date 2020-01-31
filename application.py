@@ -71,6 +71,7 @@ def before_request():
         response = make_response()
         if request.headers['Origin'] in whiteListOrigins:
             response.headers.add("Access-Control-Allow-Origin", request.headers['Origin'])
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
         response.headers.add('Access-Control-Allow-Headers', 'Authorization')
         response.headers.add('Access-Control-Allow-Methods', '*')
         return response
