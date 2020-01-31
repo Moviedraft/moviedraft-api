@@ -72,15 +72,16 @@ def before_request():
         if request.headers['Origin'] in whiteListOrigins:
             response.headers.add("Access-Control-Allow-Origin", request.headers['Origin'])
         response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Access-Control-Allow-Headers', 'Authorization')
+        response.headers.add('Access-Control-Allow-Headers', 'Authorization, Cache-Control')
         response.headers.add('Access-Control-Allow-Methods', '*')
+        print(response.headers)
         return response
     
 @app.after_request
 def after_request(response):
     response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
-    response.headers['Access-Control-Expose-Headers'] = 'Authorization'
-    response.headers['Access-Control-Allow-Headers'] = 'Authorization'
+    response.headers['Access-Control-Expose-Headers'] = 'Authorization, Cache-Control'
+    response.headers['Access-Control-Allow-Headers'] = 'Authorization, Cache-Control'
     
     return response
 
