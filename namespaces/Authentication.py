@@ -124,14 +124,15 @@ class LoginRefresh(Resource):
     def post(self):
         userIdentity = get_jwt_identity()
         current_user = UserModel.load_user_by_id(userIdentity)
+        
+        if not current_user:
+            abort(make_response(jsonify(message='Token is invalid.'), 401))
+        
         new_access_token = create_access_token(
                 identity={'id': current_user.id, 'role': current_user.role}, 
                 fresh=False)
-        new_refresh_token = create_refresh_token({'id': current_user.id, 
-                                                  'role': current_user.role})
         
-        return make_response(jsonify({ 'access_token': new_access_token, 
-                                      'refresh_token': new_refresh_token }), 200)    
+        return make_response(jsonify({ 'access_token': new_access_token}), 200)    
     
 logout_namespace = Namespace('logout', description='Site logout.')
 

@@ -6,8 +6,8 @@ Created on Thu Nov 28 13:42:32 2019
 """
 
 from flask import request, make_response, jsonify
-from flask_login import login_required
 from flask_restplus import Namespace, Resource, fields
+from flask_jwt_extended import jwt_required
 from datetime import datetime
 from utilities.Database import mongo
 from models.MovieModel import MovieModel
@@ -30,7 +30,7 @@ movies_namespace.model('Movies',{
 
 @movies_namespace.route('')
 class Movies(Resource):
-    @login_required
+    @jwt_required
     @movies_namespace.response(200, 'Success', movies_namespace.models['Movies'])
     @movies_namespace.response(500, 'Internal Server Error')
     @movies_namespace.response(401, 'Authentication Error') 

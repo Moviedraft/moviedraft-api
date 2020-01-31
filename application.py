@@ -12,7 +12,6 @@ from flask.sessions import SecureCookieSessionInterface
 from flask_cors import CORS
 from utilities.Database import mongo
 from utilities.WebApplicationClient import client
-from utilities.LoginManager import login
 from utilities.RestApi import restApi
 from utilities.Mailer import mail
 from utilities.Executor import executor
@@ -48,7 +47,6 @@ app.config['JWT_ALGORITHM'] = os.environ['JWT_ALGORITHM']
 app.config['JWT_EXP_DELTA_MINUTES'] = os.environ['JWT_EXP_DELTA_MINUTES']
 
 mongo.init_app(app)
-login.init_app(app)
 restApi.init_app(app)
 mail.init_app(app)
 executor.init_app(app)
