@@ -6,12 +6,11 @@ Created on Thu Dec  5 13:36:27 2019
 """
 
 from flask import jsonify, make_response
-from flask_login import login_required
+from flask_jwt_extended import jwt_required
 from flask_restplus import Namespace, Resource, fields
 from utilities.Database import mongo
 from models.RuleModel import RuleModel
-from decorators.RoleAccessDecorator import requires_role
-from enums.Role import Role
+from decorators.RoleAccessDecorator import requires_admin
 
 rules_namespace = Namespace('rules', description='Game rules.')
 
@@ -24,8 +23,8 @@ rules_namespace.model('Rules', {
 
 @rules_namespace.route('')
 class Rules(Resource):
-    @login_required
-    @requires_role(Role.admin.value)
+    @jwt_required
+    @requires_admin
     @rules_namespace.response(200, 'Success', rules_namespace.models['Rules'])
     @rules_namespace.response(401, 'Authentication Error')
     @rules_namespace.response(500, 'Internal Server Error')

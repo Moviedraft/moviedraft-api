@@ -5,32 +5,30 @@ Created on Tue Nov 19 13:45:07 2019
 @author: Jason
 """
 
-from flask import request, abort, make_response, jsonify
+from flask import request, abort, make_response, jsonify, redirect, url_for
 from flask import current_app as app
-from flask_login import login_user, logout_user, login_required
 from flask_restplus import Namespace, Resource, fields
+from flask_jwt_extended import (
+        create_access_token, 
+        create_refresh_token, 
+        jwt_refresh_token_required, 
+        get_jwt_identity, 
+        jwt_required
+        )
 from models.UserModel import UserModel
 from utilities.Database import mongo
 from utilities.WebApplicationClient import client
-from decorators.RoleAccessDecorator import requires_role
-from enums.Role import Role
-import json
 import requests
 
 login_namespace = Namespace('login', description='Site login using Google Oauth2.')
 
-login_namespace.model('User',{
-        'id': fields.String,
-        'userHandle': fields.String,
-        'firstName': fields.String,
-        'lastName': fields.String,
-        'email': fields.String,
-        'picture': fields.String,
-        'role': fields.Integer
-        })
-
 login_namespace.model('RequestAuthUriModel',{ 
         'requestUri': fields.String
+        })
+
+login_namespace.model('AuthModel', {
+        'access_token': fields.String,
+        'refresh_token': fields.String
         })
 
 @login_namespace.route('')
@@ -50,7 +48,7 @@ class RequestAuthUri(Resource):
 
 @login_namespace.route('/callback')
 class LoginCallback(Resource):
-    @login_namespace.response(200, 'Success', login_namespace.models['User'])
+    @login_namespace.response(302, 'Redirect')
     @login_namespace.response(500, 'Internal Server Error')
     def get(self):
         code = request.args.get('code')
@@ -69,51 +67,12 @@ class LoginCallback(Resource):
             data=body,
             auth=(app.config['GOOGLE_CLIENT_ID'], app.config['GOOGLE_CLIENT_SECRET'])
             )
-
-        client.parse_request_body_response(json.dumps(token_response.json()))
-    
-        userinfo_endpoint = google_provider_cfg['userinfo_endpoint']
-        uri, headers, body = client.add_token(userinfo_endpoint)
-        userinfo_response = requests.get(uri, headers=headers, data=body)
-    
-        if userinfo_response.json().get('email_verified'):
-            userEmail = userinfo_response.json().get('email')
-            picture = userinfo_response.json().get('picture')
-            firstName = userinfo_response.json().get('given_name')
-            lastName = userinfo_response.json().get('family_name')
         
-        else:
-            abort(make_response(jsonify(message='User email not available or not verified by Google.'), 500))
-    
-        storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
-    
-        if not storedUser:
-            mongo.db.users.insert_one({
-                'userHandle': userEmail.split('@')[0], 
-                'firstName': firstName,
-                'lastName': lastName,
-                'emailAddress': userEmail, 
-                'picture': picture,
-                'role': 1
-                })
-    
-            storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
-
-        userModel = UserModel(id=str(storedUser['_id']),
-                    userHandle=storedUser['userHandle'], 
-                    firstName=storedUser['firstName'], 
-                    lastName=storedUser['lastName'], 
-                    email=storedUser['emailAddress'], 
-                    picture=storedUser['picture'],
-                    role=storedUser['role'])
-        
-        login_user(userModel)
-
-        return make_response(userModel.__dict__, 200)
+        return redirect(url_for('login_login_validate', id_token=token_response.json()['id_token']))
 
 @login_namespace.route('/validate')
 class loginValidate(Resource):
-    @login_namespace.response(200, 'Success', login_namespace.models['User'])
+    @login_namespace.response(200, 'Success', login_namespace.models['AuthModel'])
     @login_namespace.response(500, 'Internal Server Error')
     @login_namespace.doc(params={'id_token': 'Token retrieved from Google.'})
     def get(self):
@@ -148,29 +107,41 @@ class loginValidate(Resource):
     
             storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
 
-        userModel = UserModel(id=str(storedUser['_id']),
-                    userHandle=storedUser['userHandle'], 
-                    firstName=storedUser['firstName'], 
-                    lastName=storedUser['lastName'], 
-                    email=storedUser['emailAddress'], 
-                    picture=storedUser['picture'],
-                    role=storedUser['role'])
+        access_token = create_access_token(
+                identity={'id': str(storedUser['_id']), 'role': storedUser['role']}, 
+                fresh=True)
+        refresh_token = create_refresh_token(str(storedUser['_id']))
         
-        login_user(userModel)
+        return make_response(jsonify({ 'access_token': access_token, 
+                                      'refresh_token': refresh_token }), 200)
 
-        return make_response(userModel.__dict__, 200)
+@login_namespace.route('/refresh')
+class LoginRefresh(Resource):
+    @jwt_refresh_token_required
+    @login_namespace.response(200, 'Success', login_namespace.models['AuthModel'])
+    @login_namespace.response(500, 'Internal Server Error')
+    def post(self):
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity)
         
+        if not current_user:
+            abort(make_response(jsonify(message='Token is invalid.'), 401))
+        
+        new_access_token = create_access_token(
+                identity={'id': current_user.id, 'role': current_user.role}, 
+                fresh=False)
+        
+        return make_response(jsonify({ 'access_token': new_access_token}), 200)    
+    
 logout_namespace = Namespace('logout', description='Site logout.')
 
 @logout_namespace.route('')
 class Logout(Resource):
-    @login_required
-    @requires_role(Role.user.value)
+    @jwt_required
     @login_namespace.response(200, 'Success')
     @login_namespace.response(500, 'Internal Server Error')
     @login_namespace.response(401, 'Authentication Error')
     def get(self):
-        logout_user()
         return make_response('', 200)    
 
 def get_google_provider_cfg():
