@@ -74,7 +74,6 @@ def before_request():
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         response.headers.add('Access-Control-Allow-Headers', 'Authorization, Cache-Control')
         response.headers.add('Access-Control-Allow-Methods', '*')
-        print(response.headers)
         return response
     
 @app.after_request
