@@ -18,7 +18,6 @@ from flask_jwt_extended import (
 from models.UserModel import UserModel
 from utilities.Database import mongo
 from utilities.WebApplicationClient import client
-from decorators.RoleAccessDecorator import requires_admin
 import requests
 
 login_namespace = Namespace('login', description='Site login using Google Oauth2.')
@@ -139,7 +138,6 @@ logout_namespace = Namespace('logout', description='Site logout.')
 @logout_namespace.route('')
 class Logout(Resource):
     @jwt_required
-    @requires_admin
     @login_namespace.response(200, 'Success')
     @login_namespace.response(500, 'Internal Server Error')
     @login_namespace.response(401, 'Authentication Error')
