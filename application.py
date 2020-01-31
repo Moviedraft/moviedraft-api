@@ -36,7 +36,7 @@ app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 app.config['GOOGLE_CLIENT_ID'] = os.environ['GOOGLE_CLIENT_ID']
 app.config['GOOGLE_CLIENT_SECRET'] = os.environ['GOOGLE_CLIENT_SECRET']
 app.config['GOOGLE_DISCOVERY_URL'] = os.environ['GOOGLE_DISCOVERY_URL']
-app.config['WHITELIST_ORIGIN'] = os.environ['WHITELIST_ORIGIN']
+app.config['WHITELIST_ORIGINS'] = os.environ['WHITELIST_ORIGINS']
 app.config['MAIL_SERVER'] = os.environ['MAIL_SERVER']
 app.config['MAIL_PORT'] = os.environ['MAIL_PORT']
 app.config['MAIL_USE_SSL'] = os.environ['MAIL_USE_SSL']
@@ -51,7 +51,7 @@ restApi.init_app(app)
 mail.init_app(app)
 executor.init_app(app)
 jwt.init_app(app)
-CORS(app, supports_credentials=True, resources={r"/*": {'origins': app.config['WHITELIST_ORIGIN']}})
+CORS(app, supports_credentials=True, resources={r"/*": {'origins': [app.config['WHITELIST_ORIGINS'].split(';')]}})
 
 client.client_id = app.config['GOOGLE_CLIENT_ID']
 
@@ -66,9 +66,11 @@ restApi.add_namespace(users_namespace)
 
 @app.before_request
 def before_request():
+    whiteListOrigins = app.config['WHITELIST_ORIGINS'].split(';')
     if request.method == "OPTIONS":
         response = make_response()
-        response.headers.add("Access-Control-Allow-Origin", os.environ['WHITELIST_ORIGIN'])
+        if request.headers['Origin'] in whiteListOrigins:
+            response.headers.add("Access-Control-Allow-Origin", request.headers['Origin'])
         response.headers.add('Access-Control-Allow-Headers', 'Authorization')
         response.headers.add('Access-Control-Allow-Methods', '*')
         return response
