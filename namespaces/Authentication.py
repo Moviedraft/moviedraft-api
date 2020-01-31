@@ -31,6 +31,10 @@ login_namespace.model('AuthModel', {
         'refresh_token': fields.String
         })
 
+login_namespace.model('AuthRefreshModel', {
+        'access_token': fields.String
+        })
+
 @login_namespace.route('')
 class RequestAuthUri(Resource):
     @login_namespace.response(200, 'Success', login_namespace.models['RequestAuthUriModel'])
@@ -118,7 +122,7 @@ class loginValidate(Resource):
 @login_namespace.route('/refresh')
 class LoginRefresh(Resource):
     @jwt_refresh_token_required
-    @login_namespace.response(200, 'Success', login_namespace.models['AuthModel'])
+    @login_namespace.response(200, 'Success', login_namespace.models['AuthRefreshModel'])
     @login_namespace.response(500, 'Internal Server Error')
     def post(self):
         userIdentity = get_jwt_identity()
