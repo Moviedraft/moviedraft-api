@@ -100,7 +100,7 @@ class CreateGames(Resource):
                     playerIds=playerIds
                     )
 
-        if not GameModel.load_game(game.gameNameLowerCase) == None:
+        if not GameModel.load_game_by_name(game.gameName) == None:
             abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(game.gameName)), 409))
         
         result = mongo.db.games.insert_one(game.__dict__)
@@ -126,7 +126,7 @@ class Game(Resource):
     @games_namespace.response(404, 'Not Found')
     @games_namespace.response(500, 'Internal Server Error')
     def get(self, gameName):
-        game = GameModel.load_game(gameName.lower())
+        game = GameModel.load_game_by_name(gameName)
     
         if game:
             movies = []
@@ -163,7 +163,7 @@ class Game(Resource):
     @games_namespace.response(404, 'Not Found')
     @games_namespace.response(500, 'Internal Server Error')
     def delete(self, gameName):
-        game = GameModel.load_game(gameName.lower())
+        game = GameModel.load_game_by_name(gameName)
         if game:
             try:
                 mongo.db.games.delete_one({'gameName': game.gameName})
@@ -194,7 +194,7 @@ class Game(Resource):
         userIdentity = get_jwt_identity()
         current_user = UserModel.load_user_by_id(userIdentity['id'])
         
-        existingGame = GameModel.load_game(gameName.lower())
+        existingGame = GameModel.load_game_by_name(gameName)
         
         if not existingGame:
             abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
@@ -254,5 +254,3 @@ class Game(Resource):
         updatedGame = GameModel.load_game(existingGame.gameNameLowerCase)
         
         return make_response(updatedGame.__dict__, 200)
-    
-    

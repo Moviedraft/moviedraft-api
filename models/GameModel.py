@@ -7,6 +7,7 @@ Created on Mon Nov 25 21:14:25 2019
 
 from utilities.Database import mongo
 from datetime import datetime
+from bson.objectid import ObjectId
 
 class GameModel():
     def __init__(self, gameName, gameNameLowerCase, startDate, endDate, 
@@ -21,9 +22,24 @@ class GameModel():
         self.rules = rules
         self.commissionerId = commissionerId
         self.playerIds = playerIds
-        
-    def load_game(gameNameLowerCase):
-        game = mongo.db.games.find_one({'gameNameLowerCase': gameNameLowerCase})
+    
+    @classmethod
+    def load_game_by_id(cls, id):
+        if not ObjectId.is_valid(id):
+            return None
+        queryDict = {'_id': ObjectId(id)}
+        game = cls.load_game(queryDict)  
+        return game
+
+    @classmethod
+    def load_game_by_name(cls, name):
+        queryDict = {'gameNameLowerCase': name.lower()}
+        game = cls.load_game(queryDict)  
+        return game
+
+    @classmethod
+    def load_game(cls, queryDict):
+        game = mongo.db.games.find_one(queryDict)
         if not game:
             return None
         return GameModel(
