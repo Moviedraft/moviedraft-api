@@ -9,7 +9,7 @@ from utilities.Database import mongo
 from bson.objectid import ObjectId
 
 class UserModel():
-    def __init__(self, id, userHandle, firstName, lastName, email, picture, role):
+    def __init__(self, id, userHandle, firstName, lastName, email, picture, role, lastLoggedIn):
         self.id = id
         self.userHandle = userHandle
         self.firstName = firstName
@@ -17,6 +17,7 @@ class UserModel():
         self.email = email
         self.picture = picture
         self.role = role
+        self.lastLoggedIn = lastLoggedIn
 
     @staticmethod
     def is_authenticated():
@@ -35,6 +36,21 @@ class UserModel():
 
     def allowed(self, requiredRole):
         return self.role >= requiredRole
+    
+    def update_user(self):
+        result = mongo.db.users.update_one({'_id': ObjectId(self.id)}, 
+                                            { '$set': {'userHandle': self.userHandle,
+                                             'firstName': self.firstName,
+                                             'lastName': self.lastName,
+                                             'email': self.email,
+                                             'picture': self.picture,
+                                             'role': self.role,
+                                             'lastLoggedIn': self.lastLoggedIn
+                                            }})
+        if result.modified_count == 1:
+            return self.load_user_by_id(self.id)
+        
+        return None
 
     @classmethod
     def load_user_by_id(cls, id):
@@ -61,5 +77,6 @@ class UserModel():
                 lastName = user['lastName'],
                 email = user['emailAddress'],
                 picture = user['picture'],
-                role = user['role'])
+                role = user['role'],
+                lastLoggedIn = user['lastLoggedIn'])
     

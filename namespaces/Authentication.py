@@ -18,6 +18,7 @@ from flask_jwt_extended import (
 from models.UserModel import UserModel
 from utilities.Database import mongo
 from utilities.WebApplicationClient import client
+from datetime import datetime
 import requests
 
 login_namespace = Namespace('login', description='Site login using Google Oauth2.')
@@ -97,7 +98,7 @@ class loginValidate(Resource):
         else:
             abort(make_response(jsonify(message='User email not available or not verified by Google.'), 500))
         
-        storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
+        storedUser = UserModel.load_user_by_email(userEmail)
     
         if not storedUser:
             mongo.db.users.insert_one({
@@ -106,15 +107,23 @@ class loginValidate(Resource):
                 'lastName': lastName,
                 'emailAddress': userEmail, 
                 'picture': picture,
-                'role': 1
+                'role': 1,
+                'lastLoggedIn': datetime.utcnow()
                 })
     
-            storedUser = mongo.db.users.find_one({'emailAddress': userEmail})
+            storedUser = UserModel.load_user_by_email(userEmail)
+        
+        storedUser.lastLoggedIn = datetime.utcnow()
+        
+        updatedUser = storedUser.update_user()
+        
+        if updatedUser is None:
+            abort(make_response(jsonify(message='Unable to update user.'), 500))
 
         access_token = create_access_token(
-                identity={'id': str(storedUser['_id']), 'role': storedUser['role']}, 
+                identity={'id': updatedUser.id, 'role': updatedUser.role}, 
                 fresh=True)
-        refresh_token = create_refresh_token(str(storedUser['_id']))
+        refresh_token = create_refresh_token(updatedUser.id)
         
         return make_response(jsonify({ 'access_token': access_token, 
                                       'refresh_token': refresh_token }), 200)
