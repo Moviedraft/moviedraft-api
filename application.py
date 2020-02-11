@@ -59,24 +59,19 @@ restApi.add_namespace(logout_namespace)
 restApi.add_namespace(games_namespace)
 restApi.add_namespace(rules_namespace)
 restApi.add_namespace(users_namespace)
-
-@app.before_request
-def before_request():
-    whiteListOrigins = app.config['WHITELIST_ORIGINS'].split(';')
-    if request.method == "OPTIONS":
-        response = make_response()
-        if request.headers['Origin'] in whiteListOrigins:
-            response.headers.add("Access-Control-Allow-Origin", request.headers['Origin'])
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Access-Control-Allow-Headers', 'Authorization, Cache-Control')
-        response.headers.add('Access-Control-Allow-Methods', '*')
-        return response
     
 @app.after_request
 def after_request(response):
-    response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
-    response.headers['Access-Control-Expose-Headers'] = 'Authorization, Cache-Control'
-    response.headers['Access-Control-Allow-Headers'] = 'Authorization, Cache-Control'
+    whiteListOrigins = app.config['WHITELIST_ORIGINS'].split(';')
+    
+    if 'HTTP_ORIGIN' in request.environ and request.environ['HTTP_ORIGIN'] in whiteListOrigins:
+        response.headers.add("Access-Control-Allow-Origin", request.environ['HTTP_ORIGIN'])
+        
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    response.headers.add('Access-Control-Allow-Methods', '*')
+    response.headers.add('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
+    response.headers.add('Access-Control-Expose-Headers', 'Authorization, Cache-Control')
+    response.headers.add('Access-Control-Allow-Headers', 'Authorization, Cache-Control')
     
     return response
 
