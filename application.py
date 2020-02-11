@@ -8,8 +8,6 @@ Created on Tue Nov 19 08:45:14 2019
 import sys
 import os
 from flask import Flask, request, make_response
-from flask.sessions import SecureCookieSessionInterface
-from flask_cors import CORS
 from utilities.Database import mongo
 from utilities.WebApplicationClient import client
 from utilities.RestApi import restApi
@@ -52,11 +50,8 @@ mail.init_app(app)
 executor.init_app(app)
 jwt.init_app(app)
 jwt._set_error_handler_callbacks(restApi)
-CORS(app, supports_credentials=True, resources={r"/*": {'origins': '*'}})
 
 client.client_id = app.config['GOOGLE_CLIENT_ID']
-
-session_serializer = SecureCookieSessionInterface().get_signing_serializer(app)
 
 restApi.add_namespace(movies_namespace)
 restApi.add_namespace(login_namespace)
