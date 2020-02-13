@@ -149,7 +149,7 @@ class LoginRefresh(Resource):
                 identity={'tokenId': str(ObjectId()), 'id': current_user.id, 'role': current_user.role}, 
                 fresh=False)
         
-        add_token_to_database(access_token, app.config['JWT_IDENTITY_CLAIM'])
+        add_token_to_database(new_access_token, app.config['JWT_IDENTITY_CLAIM'])
         
         return make_response(jsonify({ 'access_token': new_access_token}), 200)    
     
