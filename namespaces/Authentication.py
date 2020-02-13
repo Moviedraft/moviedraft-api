@@ -15,9 +15,11 @@ from flask_jwt_extended import (
         get_jwt_identity, 
         jwt_required
         )
+from bson.objectid import ObjectId
 from models.UserModel import UserModel
 from utilities.Database import mongo
 from utilities.WebApplicationClient import client
+from utilities.TokenHelpers import revoke_token, add_token_to_database
 from datetime import datetime
 import requests
 
@@ -119,11 +121,14 @@ class loginValidate(Resource):
         
         if updatedUser is None:
             abort(make_response(jsonify(message='Unable to update user.'), 500))
-
+        
         access_token = create_access_token(
-                identity={'id': updatedUser.id, 'role': updatedUser.role}, 
+                identity={'tokenId': str(ObjectId()), 'id': updatedUser.id, 'role': updatedUser.role}, 
                 fresh=True)
-        refresh_token = create_refresh_token(updatedUser.id)
+        refresh_token = create_refresh_token(identity={'tokenId': str(ObjectId()), 'id': updatedUser.id})
+        
+        add_token_to_database(access_token, app.config['JWT_IDENTITY_CLAIM'])
+        add_token_to_database(refresh_token, app.config['JWT_IDENTITY_CLAIM'])
         
         return make_response(jsonify({ 'access_token': access_token, 
                                       'refresh_token': refresh_token }), 200)
@@ -141,7 +146,7 @@ class LoginRefresh(Resource):
             abort(make_response(jsonify(message='Token is invalid.'), 401))
         
         new_access_token = create_access_token(
-                identity={'id': current_user.id, 'role': current_user.role}, 
+                identity={'tokenId': str(ObjectId()), 'id': current_user.id, 'role': current_user.role}, 
                 fresh=False)
         
         return make_response(jsonify({ 'access_token': new_access_token}), 200)    
@@ -155,7 +160,10 @@ class Logout(Resource):
     @login_namespace.response(500, 'Internal Server Error')
     @login_namespace.response(401, 'Authentication Error')
     def get(self):
-        return make_response('', 200)    
+        identity = get_jwt_identity()
+        revoke_token(identity['tokenId'])
+        
+        return make_response('', 200) 
 
 def get_google_provider_cfg():
     return requests.get(app.config['GOOGLE_DISCOVERY_URL']).json()
