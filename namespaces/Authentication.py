@@ -140,7 +140,7 @@ class LoginRefresh(Resource):
     @login_namespace.response(500, 'Internal Server Error')
     def post(self):
         userIdentity = get_jwt_identity()
-        current_user = UserModel.load_user_by_id(userIdentity)
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
         
         if not current_user:
             abort(make_response(jsonify(message='Token is invalid.'), 401))
