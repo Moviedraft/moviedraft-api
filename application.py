@@ -7,13 +7,14 @@ Created on Tue Nov 19 08:45:14 2019
 
 import sys
 import os
-from flask import Flask, request, make_response
+from flask import Flask, request
 from utilities.Database import mongo
 from utilities.WebApplicationClient import client
 from utilities.RestApi import restApi
 from utilities.Mailer import mail
 from utilities.Executor import executor
 from utilities.JWTManager import jwt
+from utilities.TokenHelpers import is_token_revoked
 from namespaces.Movies import movies_namespace
 from namespaces.Authentication import login_namespace
 from namespaces.Authentication import logout_namespace
@@ -43,6 +44,8 @@ app.config['MAIL_PASSWORD'] = os.environ['MAIL_PASSWORD']
 app.config['GOOGLE_TOKENINFO_URI'] = os.environ['GOOGLE_TOKENINFO_URI']
 app.config['JWT_ALGORITHM'] = os.environ['JWT_ALGORITHM']
 app.config['JWT_EXP_DELTA_MINUTES'] = os.environ['JWT_EXP_DELTA_MINUTES']
+app.config['JWT_BLACKLIST_ENABLED'] = os.environ['JWT_BLACKLIST_ENABLED']
+app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = os.environ['JWT_BLACKLIST_TOKEN_CHECKS'].split(';')
 
 mongo.init_app(app)
 restApi.init_app(app)
@@ -59,6 +62,10 @@ restApi.add_namespace(logout_namespace)
 restApi.add_namespace(games_namespace)
 restApi.add_namespace(rules_namespace)
 restApi.add_namespace(users_namespace)
+
+@jwt.token_in_blacklist_loader
+def check_if_token_revoked(decoded_token):
+    return is_token_revoked(decoded_token)
     
 @app.after_request
 def after_request(response):
