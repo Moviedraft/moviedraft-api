@@ -18,6 +18,7 @@ from utilities.Executor import executor
 from models.GameModel import GameModel
 from models.RuleModel import RuleModel
 from models.MovieModel import MovieModel
+from models.MovieBidModel import MovieBidModel
 from models.UserModel import UserModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
@@ -29,10 +30,12 @@ gamePayload = games_namespace.model('GamePayload', {
         'gameName': fields.String,
         'startDate': fields.String,
         'endDate': fields.String,
+        'auctionDate': fields.String,
         'playerBuyIn': fields.Integer,
         'dollarSpendingCap': fields.Integer,
         'playerIds': fields.List(fields.String),
         'movies': fields.List(fields.String),
+        'auctionItemsExpireInSeconds': fields.Integer,
         'rules': fields.Nested(rules_namespace.models['Rules'])
         })
 
@@ -44,9 +47,11 @@ games_namespace.model('Game', {
         'gameName': fields.String,
         'startDate': fields.String,
         'endDate': fields.String,
+        'auctionDate': fields.String,
         'playerBuyIn': fields.Integer,
         'dollarSpendingCap': fields.Integer,
         'movies': fields.List(fields.Nested(movies_namespace.models['MovieModelFields'])),
+        'auctionItemsExpireInSeconds': fields.Integer,
         'rules': fields.List(fields.Nested(rules_namespace.models['Rules'])),
         'commissionerId': fields.String,
         'playerIds': fields.List(fields.String)
@@ -67,6 +72,9 @@ class CreateGames(Resource):
         
         jsonDump = json.dumps(request.get_json(force=True))
         jsonData = json.loads(jsonDump)
+        
+        gameId = ObjectId()
+        
         rulesArray = []
         rulesJson = jsonData['rules']
         for rule in rulesJson:
@@ -86,19 +94,27 @@ class CreateGames(Resource):
                 playerIds.append(email.lower())
                 recipientName = email.split('@')[0]
                 recipientDict[email] = recipientName
-
-            game = GameModel(
-                    gameName=jsonData['gameName'],
-                    gameNameLowerCase=jsonData['gameName'].lower(),
-                    startDate=datetime.strptime(jsonData['startDate'], '%Y-%m-%d'),
-                    endDate=datetime.strptime(jsonData['endDate'], '%Y-%m-%d'),
-                    playerBuyIn=jsonData['playerBuyIn'],
-                    dollarSpendingCap=jsonData['dollarSpendingCap'],
-                    movies=jsonData['movies'],
-                    rules=rulesArray,
-                    commissionerId=current_user.id,
-                    playerIds=playerIds
-                    )
+        
+        for movieId in jsonData['movies']:
+            if not MovieModel.load_movie_by_id(movieId):
+                abort(make_response(jsonify(message='MovieId: \'{}\' could not be found.'.format(movieId)), 404))
+            MovieBidModel.create_empty_bid(gameId, movieId, datetime.strptime(jsonData['auctionDate'], '%Y-%m-%d %H:%M:%S'))
+            
+        game = GameModel(
+                id=gameId,
+                gameName=jsonData['gameName'],
+                gameNameLowerCase=jsonData['gameName'].lower(),
+                startDate=datetime.strptime(jsonData['startDate'], '%Y-%m-%d'),
+                endDate=datetime.strptime(jsonData['endDate'], '%Y-%m-%d'),
+                auctionDate=datetime.strptime(jsonData['auctionDate'], '%Y-%m-%d %H:%M:%S'),
+                playerBuyIn=jsonData['playerBuyIn'],
+                dollarSpendingCap=jsonData['dollarSpendingCap'],
+                movies=jsonData['movies'],
+                auctionItemsExpireInSeconds=jsonData['auctionItemsExpireInSeconds'],
+                rules=rulesArray,
+                commissionerId=current_user.id,
+                playerIds=playerIds
+                )
 
         if not GameModel.load_game_by_name(game.gameName) == None:
             abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(game.gameName)), 409))
@@ -184,10 +200,12 @@ class Game(Resource):
         parser.add_argument('gameName', required=True)
         parser.add_argument('startDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d'), required=True)
         parser.add_argument('endDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d'), required=True)
+        parser.add_argument('auctionDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d %H:%M:%S'), required=True)
         parser.add_argument('playerBuyIn', type=int, required=True)
         parser.add_argument('dollarSpendingCap', type=int, required=True)
         parser.add_argument('playerIds', type=list, location='json', required=True)
         parser.add_argument('movies', type=list, location='json', required=True)
+        parser.add_argument('auctionItemsExpireInSeconds', type=int, required=True)
         parser.add_argument('rules', type=list, location='json', required=True)
         args = parser.parse_args()
         
@@ -250,7 +268,6 @@ class Game(Resource):
                 ruleArray.append(value)
         args['rules'] = ruleArray
         
-        mongo.db.games.replace_one({'gameName': gameName}, existingGame.__dict__)
-        updatedGame = GameModel.load_game(existingGame.gameNameLowerCase)
+        updatedGame = existingGame.update_game(gameName)
         
         return make_response(updatedGame.__dict__, 200)
