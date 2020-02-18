@@ -36,7 +36,14 @@ movies_namespace.model('MovieBidRequest', {
         'gameId': fields.String,
         'userId': fields.String,
         'movieId': fields.String,
-        'auctionExpiry': fields.datetime,
+        'auctionExpiry': fields.DateTime(dt_format=u'iso8601'),
+        'bid': fields.Integer
+        })
+
+movies_namespace.model('MovieBidPost', {
+        'gameId': fields.String,
+        'userId': fields.String,
+        'movieId': fields.String,
         'bid': fields.Integer
         })
 
@@ -123,7 +130,7 @@ class GameMovies(Resource):
 @movies_namespace.route('/bid')
 class MovieBid(Resource):
     @jwt_required
-    @movies_namespace.response(200, 'Success', movies_namespace.models['MovieBidRequest'])
+    @movies_namespace.response(200, 'Success', movies_namespace.models['MovieBidPost'])
     @movies_namespace.response(401, 'Authentication Error')
     @movies_namespace.response(403, 'Forbidden')
     @movies_namespace.response(404, 'Not Found')
