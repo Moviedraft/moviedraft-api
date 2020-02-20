@@ -23,7 +23,16 @@ users_namespace.model('User',{
         'lastName': fields.String,
         'email': fields.String,
         'picture': fields.String,
-        'role': fields.Integer
+        'role': fields.Integer,
+        'lastLoggedIn': fields.DateTime(dt_format='iso8601'),
+        'games': fields.List(
+                fields.Nested(users_namespace.model('UserGame', {
+                        'id': fields.String,
+                        'game_id': fields.String,
+                        'user_id': fields.String,
+                        'gameName': fields.String
+                        }))
+                )
         })
 
 @users_namespace.route('/current')
