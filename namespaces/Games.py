@@ -20,6 +20,7 @@ from models.RuleModel import RuleModel
 from models.MovieModel import MovieModel
 from models.MovieBidModel import MovieBidModel
 from models.UserModel import UserModel
+from models.UserGameModel import UserGameModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
 from decorators.RoleAccessDecorator import requires_admin
@@ -73,6 +74,9 @@ class CreateGames(Resource):
         jsonDump = json.dumps(request.get_json(force=True))
         jsonData = json.loads(jsonDump)
         
+        if not GameModel.load_game_by_name(jsonData['gameName']) == None:
+            abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(jsonData['gameName'])), 409))
+        
         gameId = ObjectId()
         
         rulesArray = []
@@ -88,6 +92,12 @@ class CreateGames(Resource):
             player = UserModel.load_user_by_email(email)
             if player:
                 playerIds.append(player.id)
+                
+                userGame = UserGameModel.create_userGameModel(gameId, player.id, jsonData['gameName'])
+                if not userGame:
+                    abort(make_response(jsonify(message='Unable to associate user with game: \'{}\'.'
+                                                .format(jsonData['gameName'])), 500))
+                    
                 recipientName = player.firstName
                 recipientDict[email] = recipientName
             else:
@@ -116,9 +126,6 @@ class CreateGames(Resource):
                 playerIds=playerIds
                 )
 
-        if not GameModel.load_game_by_name(game.gameName) == None:
-            abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(game.gameName)), 409))
-        
         result = mongo.db.games.insert_one(game.__dict__)
         
         for email in playerEmailsJson:
@@ -181,11 +188,13 @@ class Game(Resource):
     def delete(self, gameName):
         game = GameModel.load_game_by_name(gameName)
         if game:
+            UserGameModel.delete_user_games_by_game_id(game._id)
             try:
                 mongo.db.games.delete_one({'gameName': game.gameName})
                 return make_response('', 200)
             except:
                 abort(make_response(jsonify('Game name: \'{}\' could not be deleted'.format(gameName)), 500))
+                
         abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
     
     @jwt_required
@@ -269,5 +278,13 @@ class Game(Resource):
         args['rules'] = ruleArray
         
         updatedGame = existingGame.update_game(gameName)
+        
+        userGames = UserGameModel.load_user_game_by_game_id(updatedGame._id)
+        for userGame in userGames:
+            userGame.gameName = updatedGame.gameName
+            updatedUserGame = userGame.update_userGameModel()
+            if not updatedUserGame:
+                abort(make_response(jsonify('Game could not be updated for gameId: \'{}\' and userId: \'{}\'.'
+                                            .format(userGame.game_id, userGame.user_id)), 500))
         
         return make_response(updatedGame.__dict__, 200)

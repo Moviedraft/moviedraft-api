@@ -7,9 +7,11 @@ Created on Tue Nov 19 10:03:06 2019
 
 from utilities.Database import mongo
 from bson.objectid import ObjectId
+from models.UserGameModel import UserGameModel
+import json
 
 class UserModel():
-    def __init__(self, id, userHandle, firstName, lastName, email, picture, role, lastLoggedIn):
+    def __init__(self, id, userHandle, firstName, lastName, email, picture, role, lastLoggedIn, games=[]):
         self.id = id
         self.userHandle = userHandle
         self.firstName = firstName
@@ -18,6 +20,7 @@ class UserModel():
         self.picture = picture
         self.role = role
         self.lastLoggedIn = lastLoggedIn
+        self.games = games
 
     @staticmethod
     def is_authenticated():
@@ -51,7 +54,7 @@ class UserModel():
             return self.load_user_by_id(self.id)
         
         return None
-
+    
     @classmethod
     def load_user_by_id(cls, id):
         if not ObjectId.is_valid(id):
@@ -71,6 +74,9 @@ class UserModel():
         user = mongo.db.users.find_one(queryDict)
         if not user:
             return None
+        
+        userGames = UserGameModel.load_user_games_by_user_id(str(user['_id']))
+        
         return UserModel(id = str(user['_id']),
                 userHandle = user['userHandle'],
                 firstName = user['firstName'],
@@ -78,5 +84,6 @@ class UserModel():
                 email = user['emailAddress'],
                 picture = user['picture'],
                 role = user['role'],
-                lastLoggedIn = user['lastLoggedIn'])
+                lastLoggedIn = user['lastLoggedIn'],
+                games=[userGame.serialize() for userGame in userGames])
     
