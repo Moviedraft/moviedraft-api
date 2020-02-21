@@ -150,8 +150,8 @@ class MovieBid(Resource):
         
         game = GameModel.load_game_by_id(args['gameId'])
         if not game:
-            abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.
-                                        format(args['gameName'])), 404))
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.
+                                        format(args['gameId'])), 404))
 
         if not MovieModel.load_movie_by_id(args['movieId']):
             abort(make_response(jsonify(message='Movie ID: \'{}\' could not be found.'.
