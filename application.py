@@ -77,8 +77,8 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     response.headers.add('Access-Control-Allow-Methods', '*')
     response.headers.add('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
-    response.headers.add('Access-Control-Expose-Headers', 'Authorization, Cache-Control')
-    response.headers.add('Access-Control-Allow-Headers', 'Authorization, Cache-Control')
+    response.headers.add('Access-Control-Expose-Headers', 'Authorization, Cache-Control, Content-Type')
+    response.headers.add('Access-Control-Allow-Headers', 'Authorization, Cache-Control, Content-Type')
     
     return response
 
