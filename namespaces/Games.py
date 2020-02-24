@@ -163,13 +163,7 @@ class Game(Resource):
         if game:
             movies = []
             for movieId in game.movies:
-                movieResult = mongo.db.movies.find_one({'_id': ObjectId(movieId)})
-                movieModel = MovieModel(id=movieResult['_id'],
-                                        releaseDate=movieResult['releaseDate'],
-                                        title=movieResult['title'],
-                                        releaseType=movieResult['releaseType'],
-                                        distributor=movieResult['distributor'],
-                                        lastUpdated=movieResult['lastUpdated'])
+                movieModel = MovieModel.load_movie_by_id(movieId)
                 movies.append(movieModel.__dict__)          
                 game.movies = movies
             
