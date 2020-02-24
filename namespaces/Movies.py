@@ -75,13 +75,27 @@ class Movies(Resource):
                 moviesResult = mongo.db.movies.find({'releaseType': releaseType, 
                                                      'releaseDate': releaseDateFilterCondition}).sort('releaseDate', 1)
                 for movie in moviesResult:
-                    movieModel = MovieModel.load_movie_by_id(str(movie['_id']))
+                    movieModel = MovieModel(
+                        movie['_id'], 
+                        movie['releaseDate'], 
+                        movie['title'], 
+                        movie['releaseType'], 
+                        movie['distributor'],
+                        movie['domesticGross'],
+                        movie['lastUpdated'])
                     movies.append(movieModel.__dict__)
             return make_response(jsonify(movies=movies), 200)
         else:
             moviesResult = mongo.db.movies.find({'releaseDate': releaseDateFilterCondition}).sort('releaseDate', 1) 
             for movie in moviesResult:
-                movieModel = MovieModel.load_movie_by_id(str(movie['_id']))
+                movieModel = MovieModel(
+                    movie['_id'], 
+                    movie['releaseDate'], 
+                    movie['title'], 
+                    movie['releaseType'], 
+                    movie['distributor'],
+                    movie['domesticGross'],
+                    movie['lastUpdated'])
                 movies.append(movieModel.__dict__)
             return make_response(jsonify(movies=movies), 200)
 
