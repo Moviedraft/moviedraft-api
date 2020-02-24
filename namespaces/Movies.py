@@ -80,7 +80,8 @@ class Movies(Resource):
                         movie['releaseDate'], 
                         movie['title'], 
                         movie['releaseType'], 
-                        movie['distributor'], 
+                        movie['distributor'],
+                        movie['domesticGross'],
                         movie['lastUpdated'])
                     movies.append(movieModel.__dict__)
             return make_response(jsonify(movies=movies), 200)
@@ -92,7 +93,8 @@ class Movies(Resource):
                     movie['releaseDate'], 
                     movie['title'], 
                     movie['releaseType'], 
-                    movie['distributor'], 
+                    movie['distributor'],
+                    movie['domesticGross'],
                     movie['lastUpdated'])
                 movies.append(movieModel.__dict__)
             return make_response(jsonify(movies=movies), 200)

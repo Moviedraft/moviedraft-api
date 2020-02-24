@@ -10,12 +10,13 @@ from datetime import datetime
 from bson.objectid import ObjectId
 
 class MovieModel():
-    def __init__(self, id, releaseDate, title, releaseType, distributor, lastUpdated):
+    def __init__(self, id, releaseDate, title, releaseType, distributor, domesticGross, lastUpdated):
         self.id = str(id)
         self.releaseDate = releaseDate
         self.title = title
         self.releaseType = releaseType
         self.distributor = distributor
+        self.domesticGross = domesticGross
         self.lastUpdated = lastUpdated
     
     @classmethod
@@ -37,5 +38,6 @@ class MovieModel():
                 title=movie['title'],
                 releaseType=movie['releaseType'],
                 distributor=movie['distributor'],
+                domesticGross=movie['domesticGross'],
                 lastUpdated=datetime.strptime(datetime.today().isoformat() , '%Y-%m-%dT%H:%M:%S.%f')
                 )
