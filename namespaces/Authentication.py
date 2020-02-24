@@ -151,6 +151,9 @@ class LoginRefresh(Resource):
         
         add_token_to_database(new_access_token, app.config['JWT_IDENTITY_CLAIM'])
         
+        current_user.lastLoggedIn = datetime.utcnow()
+        current_user.update_user()
+        
         return make_response(jsonify({ 'access_token': new_access_token}), 200)    
     
 logout_namespace = Namespace('logout', description='Site logout.')
