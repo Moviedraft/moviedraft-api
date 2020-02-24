@@ -25,6 +25,7 @@ movies_namespace.model('MovieModelFields',{
         'title': fields.String,
         'releaseType': fields.String,
         'distributor': fields.String,
+        'domesticGross': fields.Integer,
         'lastUpdated': fields.String
         })
 
