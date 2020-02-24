@@ -27,10 +27,9 @@ class GameModel():
         self.commissionerId = commissionerId
         self.playerIds = playerIds
     
-    def update_game(self, gameName):
-        mongo.db.games.replace_one({'gameName': gameName}, 
-                                   {'_id': ObjectId(self._id),
-                                    'gameName': self.gameName,
+    def update_game(self):
+        mongo.db.games.replace_one({'_id': ObjectId(self._id)}, 
+                                   {'gameName': self.gameName,
                                     'gameNameLowerCase': self.gameName.lower(),
                                     'startDate': self.startDate,
                                     'endDate': self.endDate,

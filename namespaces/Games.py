@@ -141,15 +141,15 @@ class CreateGames(Resource):
             
         return make_response(jsonify(id=str(result.inserted_id)), 200)
     
-@games_namespace.route('/<string:gameName>')
+@games_namespace.route('/<string:gameId>')
 class Game(Resource):
     @jwt_required
     @games_namespace.response(200, 'Success', games_namespace.models['Game'])
     @games_namespace.response(401, 'Authentication Error')
     @games_namespace.response(404, 'Not Found')
     @games_namespace.response(500, 'Internal Server Error')
-    def get(self, gameName):
-        game = GameModel.load_game_by_name(gameName)
+    def get(self, gameId):
+        game = GameModel.load_game_by_id(gameId)
     
         if game:
             movies = []
@@ -177,7 +177,7 @@ class Game(Resource):
             
             return make_response(jsonify(game.__dict__), 200)
     
-        abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
+        abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
 
     @jwt_required
     @requires_admin
@@ -185,17 +185,17 @@ class Game(Resource):
     @games_namespace.response(401, 'Authentication Error')
     @games_namespace.response(404, 'Not Found')
     @games_namespace.response(500, 'Internal Server Error')
-    def delete(self, gameName):
-        game = GameModel.load_game_by_name(gameName)
+    def delete(self, gameId):
+        game = GameModel.load_game_by_id(gameId)
         if game:
             UserGameModel.delete_user_games_by_game_id(game._id)
             try:
                 mongo.db.games.delete_one({'gameName': game.gameName})
                 return make_response('', 200)
             except:
-                abort(make_response(jsonify('Game name: \'{}\' could not be deleted'.format(gameName)), 500))
+                abort(make_response(jsonify('Game ID: \'{}\' could not be deleted'.format(gameId)), 500))
                 
-        abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
+        abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
     
     @jwt_required
     @games_namespace.expect(gamePayload)
@@ -204,7 +204,7 @@ class Game(Resource):
     @games_namespace.response(403, 'Forbidden')
     @games_namespace.response(404, 'Not Found')
     @games_namespace.response(500, 'Internal Server Error')
-    def put(self, gameName):
+    def put(self, gameId):
         parser = reqparse.RequestParser()
         parser.add_argument('gameName', required=True)
         parser.add_argument('startDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d'), required=True)
@@ -221,10 +221,10 @@ class Game(Resource):
         userIdentity = get_jwt_identity()
         current_user = UserModel.load_user_by_id(userIdentity['id'])
         
-        existingGame = GameModel.load_game_by_name(gameName)
+        existingGame = GameModel.load_game_by_id(gameId)
         
         if not existingGame:
-            abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.format(gameName)), 404))
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
             
         if existingGame.commissionerId != current_user.id:
             abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
@@ -277,7 +277,7 @@ class Game(Resource):
                 ruleArray.append(value)
         args['rules'] = ruleArray
         
-        updatedGame = existingGame.update_game(gameName)
+        updatedGame = existingGame.update_game()
         
         userGames = UserGameModel.load_user_game_by_game_id(updatedGame._id)
         for userGame in userGames:
