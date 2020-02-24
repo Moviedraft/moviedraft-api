@@ -5,13 +5,12 @@ Created on Mon Nov 25 20:16:39 2019
 @author: Jason
 """
 
-from flask import request, abort, make_response, jsonify, render_template
+from flask import abort, make_response, jsonify, render_template
 from flask import current_app as app
 from flask_restplus import Namespace, Resource, fields, reqparse
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from datetime import datetime
 from bson.objectid import ObjectId
-import json
 from utilities.Database import mongo
 from utilities.Mailer import Emailer
 from utilities.Executor import executor
@@ -61,42 +60,52 @@ games_namespace.model('Game', {
 @games_namespace.route('')
 class CreateGames(Resource):
     @jwt_required
-    @games_namespace.expect(games_namespace.models['GamePayload'])
+    @games_namespace.expect(gamePayload)
     @games_namespace.response(200, 'Success', games_namespace.models['GamePostResponse'])
     @games_namespace.response(401, 'Authentication Error')
     @games_namespace.response(400, 'Bad Request')
     @games_namespace.response(409, 'Conflict')
     @games_namespace.response(500, 'Internal Server Error')
     def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('gameName', required=True)
+        parser.add_argument('startDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d'), required=True)
+        parser.add_argument('endDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d'), required=True)
+        parser.add_argument('auctionDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d %H:%M:%S'), required=True)
+        parser.add_argument('playerBuyIn', type=int, required=True)
+        parser.add_argument('dollarSpendingCap', type=int, required=True)
+        parser.add_argument('playerIds', type=list, location='json', required=True)
+        parser.add_argument('movies', type=list, location='json', required=True)
+        parser.add_argument('auctionItemsExpireInSeconds', type=int, required=True)
+        parser.add_argument('rules', type=list, location='json', required=True)
+        args = parser.parse_args()
+        
         userIdentity = get_jwt_identity()
         current_user = UserModel.load_user_by_id(userIdentity['id'])
         
-        jsonDump = json.dumps(request.get_json(force=True))
-        jsonData = json.loads(jsonDump)
-        
-        if not GameModel.load_game_by_name(jsonData['gameName']) == None:
-            abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(jsonData['gameName'])), 409))
+        if not GameModel.load_game_by_name(args['gameName']) == None:
+            abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(args['gameName'])), 409))
         
         gameId = ObjectId()
         
         rulesArray = []
-        rulesJson = jsonData['rules']
+        rulesJson = args['rules']
         for rule in rulesJson:
             ruleModel = RuleModel(ruleName=rule['ruleName'], rules=rule['rules'])
             rulesArray.append(ruleModel.__dict__)
         
         playerIds = []
         recipientDict = {}
-        playerEmailsJson = jsonData['playerEmails']
-        for email in playerEmailsJson:   
+        playerIdsJson = args['playerIds']
+        for email in playerIdsJson:   
             player = UserModel.load_user_by_email(email)
             if player:
                 playerIds.append(player.id)
                 
-                userGame = UserGameModel.create_userGameModel(gameId, player.id, jsonData['gameName'])
+                userGame = UserGameModel.create_userGameModel(gameId, player.id, args['gameName'])
                 if not userGame:
                     abort(make_response(jsonify(message='Unable to associate user with game: \'{}\'.'
-                                                .format(jsonData['gameName'])), 500))
+                                                .format(args['gameName'])), 500))
                     
                 recipientName = player.firstName
                 recipientDict[email] = recipientName
@@ -105,22 +114,22 @@ class CreateGames(Resource):
                 recipientName = email.split('@')[0]
                 recipientDict[email] = recipientName
         
-        for movieId in jsonData['movies']:
+        for movieId in args['movies']:
             if not MovieModel.load_movie_by_id(movieId):
                 abort(make_response(jsonify(message='MovieId: \'{}\' could not be found.'.format(movieId)), 404))
-            MovieBidModel.create_empty_bid(gameId, movieId, datetime.strptime(jsonData['auctionDate'], '%Y-%m-%d %H:%M:%S'))
+            MovieBidModel.create_empty_bid(gameId, movieId, args['auctionDate'])
             
         game = GameModel(
                 id=gameId,
-                gameName=jsonData['gameName'],
-                gameNameLowerCase=jsonData['gameName'].lower(),
-                startDate=datetime.strptime(jsonData['startDate'], '%Y-%m-%d'),
-                endDate=datetime.strptime(jsonData['endDate'], '%Y-%m-%d'),
-                auctionDate=datetime.strptime(jsonData['auctionDate'], '%Y-%m-%d %H:%M:%S'),
-                playerBuyIn=jsonData['playerBuyIn'],
-                dollarSpendingCap=jsonData['dollarSpendingCap'],
-                movies=jsonData['movies'],
-                auctionItemsExpireInSeconds=jsonData['auctionItemsExpireInSeconds'],
+                gameName=args['gameName'],
+                gameNameLowerCase=args['gameName'].lower(),
+                startDate=args['startDate'],
+                endDate=args['endDate'],
+                auctionDate=args['auctionDate'],
+                playerBuyIn=args['playerBuyIn'],
+                dollarSpendingCap=args['dollarSpendingCap'],
+                movies=args['movies'],
+                auctionItemsExpireInSeconds=args['auctionItemsExpireInSeconds'],
                 rules=rulesArray,
                 commissionerId=current_user.id,
                 playerIds=playerIds
@@ -128,7 +137,7 @@ class CreateGames(Resource):
 
         result = mongo.db.games.insert_one(game.__dict__)
         
-        for email in playerEmailsJson:
+        for email in playerIdsJson:
             executor.submit(Emailer.send_email, 
                                  'Invitation to Moviedraft', 
                                  app.config['MAIL_USERNAME'], 
