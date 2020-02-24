@@ -23,6 +23,7 @@ from models.UserGameModel import UserGameModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
 from decorators.RoleAccessDecorator import requires_admin
+import arrow
 
 games_namespace = Namespace('games', description='Draft league game data.')
 
@@ -87,6 +88,9 @@ class CreateGames(Resource):
             abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(args['gameName'])), 409))
         
         gameId = ObjectId()
+        startDate = arrow.get(args['startDate']).to('UTC').datetime
+        endDate = arrow.get(args['endDate']).to('UTC').datetime
+        auctionDate = arrow.get(args['auctionDate']).to('UTC').datetime
         
         rulesArray = []
         rulesJson = args['rules']
@@ -117,15 +121,15 @@ class CreateGames(Resource):
         for movieId in args['movies']:
             if not MovieModel.load_movie_by_id(movieId):
                 abort(make_response(jsonify(message='MovieId: \'{}\' could not be found.'.format(movieId)), 404))
-            MovieBidModel.create_empty_bid(gameId, movieId, args['auctionDate'])
+            MovieBidModel.create_empty_bid(gameId, movieId, auctionDate)
             
         game = GameModel(
                 id=gameId,
                 gameName=args['gameName'],
                 gameNameLowerCase=args['gameName'].lower(),
-                startDate=args['startDate'],
-                endDate=args['endDate'],
-                auctionDate=args['auctionDate'],
+                startDate=startDate,
+                endDate=endDate,
+                auctionDate=auctionDate,
                 playerBuyIn=args['playerBuyIn'],
                 dollarSpendingCap=args['dollarSpendingCap'],
                 movies=args['movies'],
