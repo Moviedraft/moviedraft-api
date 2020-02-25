@@ -65,6 +65,33 @@ class MovieBidModel():
                 )
     
     @classmethod
+    def load_bids_by_gameId(cls, gameId):
+        if not ObjectId.is_valid(gameId):
+            return None
+        queryDict = {'game_id': ObjectId(gameId)}
+        bids = cls.load_bids(queryDict)  
+        return bids
+    
+    @classmethod
+    def load_bids(cls, queryDict):
+        bids = mongo.db.moviebids.find(queryDict)
+        if not bids:
+            return None
+        movieBids = []
+        for bid in bids:
+            movieBid = MovieBidModel(
+                    id=str(bid['_id']),
+                    game_id=str(bid['game_id']),
+                    user_id=str(bid['user_id']),
+                    movie_id=str(bid['movie_id']),
+                    auctionExpiry=bid['auctionExpiry'],
+                    auctionExpirySet=bid['auctionExpirySet'],
+                    bid=bid['bid']
+                    )
+            movieBids.append(movieBid)
+        return movieBids
+        
+    @classmethod
     def create_empty_bid(cls, game_id, movie_id, auctionExpiry):
         id = ObjectId()
         mongo.db.moviebids.insert_one({'_id': id,
@@ -85,3 +112,23 @@ class MovieBidModel():
                 auctionExpirySet=bidItem['auctionExpirySet'],
                 bid=bidItem['bid']
                 )
+    
+    @classmethod
+    def delete_movie_bids_by_game_id(cls, game_id):
+        if not ObjectId.is_valid(game_id):
+            return None
+        queryDict = {'game_id': ObjectId(game_id)}
+        result = cls.delete_movie_bids(queryDict)
+        return result
+    
+    @classmethod
+    def delete_movie_bids_by_game_id_and_movie_id(cls, game_id, movie_id):
+        if not ObjectId.is_valid(game_id)or not ObjectId.is_valid(movie_id):
+            return None
+        queryDict = {'game_id': ObjectId(game_id), 'movie_id': ObjectId(movie_id)}
+        result = cls.delete_movie_bids(queryDict)
+        return result
+    
+    @classmethod
+    def delete_movie_bids(cls, queryDict):
+        mongo.db.moviebids.delete_many(queryDict)

@@ -8,7 +8,6 @@ Created on Tue Nov 19 10:03:06 2019
 from utilities.Database import mongo
 from bson.objectid import ObjectId
 from models.UserGameModel import UserGameModel
-import json
 
 class UserModel():
     def __init__(self, id, userHandle, firstName, lastName, email, picture, role, lastLoggedIn, games=[]):

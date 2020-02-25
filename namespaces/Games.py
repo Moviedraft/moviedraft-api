@@ -192,6 +192,7 @@ class Game(Resource):
         game = GameModel.load_game_by_id(gameId)
         if game:
             UserGameModel.delete_user_games_by_game_id(game._id)
+            MovieBidModel.delete_movie_bids_by_game_id(game._id)
             try:
                 mongo.db.games.delete_one({'gameName': game.gameName})
                 return make_response('', 200)
@@ -274,6 +275,14 @@ class Game(Resource):
             if movie:
                 movieIds.append(str(movie['_id']))
         args['movies'] = movieIds
+        
+        moviesToDelete = set(existingGame.movies).difference(set(movieIds))
+        for movieId in moviesToDelete:
+            MovieBidModel.delete_movie_bids_by_game_id_and_movie_id(gameId, movieId)
+        
+        moviesToAdd = set(movieIds).difference(set(existingGame.movies))
+        for movieId in moviesToAdd:
+            MovieBidModel.create_empty_bid(gameId, movieId, existingGame.auctionDate)
 
         for key, value in args.items():
             setattr(existingGame, key, value or getattr(existingGame, key))
@@ -288,6 +297,11 @@ class Game(Resource):
         args['rules'] = ruleArray
         
         updatedGame = existingGame.update_game()
+        
+        movieBids = MovieBidModel.load_bids_by_gameId(gameId)
+        for movieBid in movieBids:
+            movieBid.auctionExpiry = updatedGame.auctionDate
+            movieBid.update_bid()
         
         if oldgameNameLowerCase != updatedGame.gameNameLowerCase:
             userGames = UserGameModel.load_user_game_by_game_id(updatedGame._id)
