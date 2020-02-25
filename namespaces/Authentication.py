@@ -19,7 +19,7 @@ from bson.objectid import ObjectId
 from models.UserModel import UserModel
 from utilities.Database import mongo
 from utilities.WebApplicationClient import client
-from utilities.TokenHelpers import revoke_token, add_token_to_database
+from utilities.TokenHelpers import revoke_token, add_token_to_database, get_token_expiry
 from datetime import datetime, timedelta
 import requests
 
@@ -131,7 +131,10 @@ class loginValidate(Resource):
         add_token_to_database(access_token, app.config['JWT_IDENTITY_CLAIM'])
         add_token_to_database(refresh_token, app.config['JWT_IDENTITY_CLAIM'])
         
-        return make_response(jsonify({ 'access_token': access_token, 
+        tokenExpires = get_token_expiry(access_token)
+        
+        return make_response(jsonify({ 'access_token': access_token,
+                                      'expiresAt': tokenExpires,
                                       'refresh_token': refresh_token }), 200)
 
 @login_namespace.route('/refresh')
@@ -156,7 +159,10 @@ class LoginRefresh(Resource):
         current_user.lastLoggedIn = datetime.utcnow()
         current_user.update_user()
         
-        return make_response(jsonify({ 'access_token': new_access_token}), 200)    
+        tokenExpires = get_token_expiry(new_access_token)
+        
+        return make_response(jsonify({ 'access_token': new_access_token,
+                                      'expiresAt': tokenExpires }), 200)    
     
 logout_namespace = Namespace('logout', description='Site logout.')
 

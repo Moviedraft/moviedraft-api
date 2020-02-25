@@ -31,6 +31,11 @@ def add_token_to_database(encoded_token, identity_claim):
     
     mongo.db.tokens.insert_one(tokenModel.__dict__)
 
+def get_token_expiry(encoded_token):
+    decoded_token = decode_token(encoded_token)
+    expires = datetime.fromtimestamp(decoded_token['exp']).isoformat()
+    return expires
+
 def is_token_revoked(decoded_token):
     jti = decoded_token['jti']
     token = TokenModel.load_token({'jti': jti})
