@@ -132,5 +132,3 @@ class MovieBidModel():
     @classmethod
     def delete_movie_bids(cls, queryDict):
         mongo.db.moviebids.delete_many(queryDict)
-    
-    
