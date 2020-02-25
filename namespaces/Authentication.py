@@ -20,7 +20,7 @@ from models.UserModel import UserModel
 from utilities.Database import mongo
 from utilities.WebApplicationClient import client
 from utilities.TokenHelpers import revoke_token, add_token_to_database
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 
 login_namespace = Namespace('login', description='Site login using Google Oauth2.')
@@ -123,7 +123,8 @@ class loginValidate(Resource):
             abort(make_response(jsonify(message='Unable to update user.'), 500))
         
         access_token = create_access_token(
-                identity={'tokenId': str(ObjectId()), 'id': updatedUser.id, 'role': updatedUser.role}, 
+                identity={'tokenId': str(ObjectId()), 'id': updatedUser.id, 'role': updatedUser.role},
+                expires_delta=timedelta(minutes=int(app.config['JWT_EXP_DELTA_MINUTES'])),
                 fresh=True)
         refresh_token = create_refresh_token(identity={'tokenId': str(ObjectId()), 'id': updatedUser.id})
         
@@ -147,6 +148,7 @@ class LoginRefresh(Resource):
         
         new_access_token = create_access_token(
                 identity={'tokenId': str(ObjectId()), 'id': current_user.id, 'role': current_user.role}, 
+                expires_delta=timedelta(minutes=int(app.config['JWT_EXP_DELTA_MINUTES'])),
                 fresh=False)
         
         add_token_to_database(new_access_token, app.config['JWT_IDENTITY_CLAIM'])
