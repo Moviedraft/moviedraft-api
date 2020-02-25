@@ -225,12 +225,19 @@ class Game(Resource):
         current_user = UserModel.load_user_by_id(userIdentity['id'])
         
         existingGame = GameModel.load_game_by_id(gameId)
+        oldgameNameLowerCase = existingGame.gameNameLowerCase
         
         if not existingGame:
             abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
             
         if existingGame.commissionerId != current_user.id:
             abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
+        
+        if args['gameName'].lower() != oldgameNameLowerCase:
+            gameWithRequestedNewName = GameModel.load_game_by_name(args['gameName'])
+            if gameWithRequestedNewName:
+                abort(make_response(jsonify(message='Game name: \'{}\' already exists.'
+                                            .format(args['gameName'])), 409))
         
         playerIds = []
         for value in args['playerIds'] or []:
@@ -282,12 +289,13 @@ class Game(Resource):
         
         updatedGame = existingGame.update_game()
         
-        userGames = UserGameModel.load_user_game_by_game_id(updatedGame._id)
-        for userGame in userGames:
-            userGame.gameName = updatedGame.gameName
-            updatedUserGame = userGame.update_userGameModel()
-            if not updatedUserGame:
-                abort(make_response(jsonify('Game could not be updated for gameId: \'{}\' and userId: \'{}\'.'
-                                            .format(userGame.game_id, userGame.user_id)), 500))
+        if oldgameNameLowerCase != updatedGame.gameNameLowerCase:
+            userGames = UserGameModel.load_user_game_by_game_id(updatedGame._id)
+            for userGame in userGames:
+                userGame.gameName = updatedGame.gameName
+                updatedUserGame = userGame.update_userGameModel()
+                if not updatedUserGame:
+                    abort(make_response(jsonify('Game could not be updated for gameId: \'{}\' and userId: \'{}\'.'
+                                                .format(userGame.game_id, userGame.user_id)), 500))
         
         return make_response(updatedGame.__dict__, 200)
