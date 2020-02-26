@@ -11,6 +11,7 @@ from datetime import datetime
 from bson.objectid import ObjectId
 from models.TokenModel import TokenModel
 from utilities.Database import mongo
+import arrow
 
 def add_token_to_database(encoded_token, identity_claim):
     decoded_token = decode_token(encoded_token)
@@ -33,7 +34,7 @@ def add_token_to_database(encoded_token, identity_claim):
 
 def get_token_expiry(encoded_token):
     decoded_token = decode_token(encoded_token)
-    expires = datetime.fromtimestamp(decoded_token['exp']).isoformat()
+    expires = arrow.get(decoded_token['exp']).format()
     return expires
 
 def is_token_revoked(decoded_token):
