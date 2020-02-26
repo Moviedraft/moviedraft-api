@@ -277,7 +277,7 @@ class Game(Resource):
                                 render_template('InviteToGame.html', 
                                                 recipientName=recipientName, 
                                                 user=current_user,
-                                                gameName=existingGame.gameName))
+                                                gameName=args['gameName']))
         
         playersToDelete = set(existingGame.playerIds).difference(set(playerIds))
         for playerId in playersToDelete:
