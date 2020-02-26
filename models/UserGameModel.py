@@ -99,6 +99,14 @@ class UserGameModel():
         return result
     
     @classmethod
+    def delete_user_games_by_game_id_and_user_id(cls, game_id, user_id):
+        if not ObjectId.is_valid(game_id) or not ObjectId.is_valid(user_id):
+            return None
+        queryDict = {'game_id': ObjectId(game_id), 'user_id': ObjectId(user_id)}
+        result = cls.delete_user_games(queryDict)
+        return result
+    
+    @classmethod
     def delete_user_games(cls, queryDict):
         mongo.db.usergames.delete_many(queryDict)
         
