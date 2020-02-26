@@ -11,6 +11,7 @@ from flask_restplus import Namespace, Resource, fields, reqparse
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from datetime import datetime
 from bson.objectid import ObjectId
+from email.utils import parseaddr
 from utilities.Database import mongo
 from utilities.Mailer import Emailer
 from utilities.Executor import executor
@@ -94,26 +95,23 @@ class CreateGames(Resource):
             ruleModel = RuleModel(ruleName=rule['ruleName'], rules=rule['rules'])
             rulesArray.append(ruleModel.__dict__)
         
+        filteredPlayers = [value for value in args['playerIds'] if value != current_user.id 
+                           and value.lower() != current_user.email.lower()
+                           and '@' in parseaddr(value)[1]]
+
         playerIds = []
         recipientDict = {}
-        playerIdsJson = args['playerIds']
-        for email in playerIdsJson:   
+        for email in filteredPlayers:   
             player = UserModel.load_user_by_email(email)
             if player:
                 playerIds.append(player.id)
-                
-                userGame = UserGameModel.create_userGameModel(gameId, player.id, args['gameName'])
-                if not userGame:
-                    abort(make_response(jsonify(message='Unable to associate user with game: \'{}\'.'
-                                                .format(args['gameName'])), 500))
-                    
                 recipientName = player.firstName
                 recipientDict[email] = recipientName
             else:
                 playerIds.append(email.lower())
                 recipientName = email.split('@')[0]
                 recipientDict[email] = recipientName
-        
+
         for movieId in args['movies']:
             if not MovieModel.load_movie_by_id(movieId):
                 abort(make_response(jsonify(message='MovieId: \'{}\' could not be found.'.format(movieId)), 404))
@@ -137,7 +135,19 @@ class CreateGames(Resource):
 
         result = mongo.db.games.insert_one(game.__dict__)
         
-        for email in playerIdsJson:
+        commissioneruUserGame = UserGameModel.create_userGameModel(gameId, current_user.id, game.gameName)
+        if not commissioneruUserGame:
+            abort(make_response(jsonify(message='Unable to associate commissionerId \'{}\' with game: \'{}\'.'
+                                                .format(current_user.id, game.gameName)), 500))
+        
+        for playerId in playerIds:
+            if ObjectId.is_valid(playerId):
+                userGame = UserGameModel.create_userGameModel(gameId, player.id, args['gameName'])
+                if not userGame:
+                    abort(make_response(jsonify(message='Unable to associate userId \'{}\' with game: \'{}\'.'
+                                                .format(playerId, game.gameName)), 500))
+                    
+        for email in filteredPlayers:
             executor.submit(Emailer.send_email, 
                                  'Invitation to Moviedraft', 
                                  app.config['MAIL_USERNAME'], 
@@ -240,8 +250,10 @@ class Game(Resource):
                 abort(make_response(jsonify(message='Game name: \'{}\' already exists.'
                                             .format(args['gameName'])), 409))
         
+        filteredPlayerIds = [value for value in args['playerIds'] if value != current_user.id 
+                             and value.lower() != current_user.email.lower()]
         playerIds = []
-        for value in args['playerIds'] or []:
+        for value in filteredPlayerIds:
             sendMail = False
             player = UserModel.load_user_by_id(value)
             if player:
@@ -250,7 +262,7 @@ class Game(Resource):
                     recipientName = player.firstName
                     email = player.email
                     sendMail = True
-            else:
+            elif '@' in parseaddr(value)[1]:
                 playerIds.append(value)
                 recipientName = value.split('@')[0]
                 email = value
@@ -276,6 +288,7 @@ class Game(Resource):
             UserGameModel.create_userGameModel(gameId, playerId, existingGame.gameName)
             
         args['playerIds'] = playerIds
+        print(playerIds)
         
         movieIds = []
         for value in args['movies'] or []:
@@ -293,7 +306,7 @@ class Game(Resource):
             MovieBidModel.create_empty_bid(gameId, movieId, existingGame.auctionDate)
 
         for key, value in args.items():
-            setattr(existingGame, key, value or getattr(existingGame, key))
+            setattr(existingGame, key, value)
             if key.lower() == 'gamename':
                 setattr(existingGame, 'gameNameLowerCase', value.lower())
                 

@@ -75,6 +75,16 @@ class UserGameModel():
         userGames = cls.load_user_games(queryDict)
         return userGames
         
+    @classmethod
+    def load_user_game(cls, queryDict):
+        userGame = mongo.db.usergames.find(queryDict)
+        if not userGame:
+            return None
+        return UserGameModel(id=str(userGame['_id']), 
+                             game_id=str(userGame['game_id']), 
+                             user_id=str(userGame['user_id']), 
+                             gameName=userGame['gameName']
+                             )
     
     @classmethod
     def load_user_games(cls, queryDict):
