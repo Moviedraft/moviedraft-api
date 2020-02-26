@@ -266,6 +266,14 @@ class Game(Resource):
                                                 recipientName=recipientName, 
                                                 user=current_user,
                                                 gameName=existingGame.gameName))
+        
+        playersToDelete = set(existingGame.playerIds).difference(set(playerIds))
+        for playerId in playersToDelete:
+            UserGameModel.delete_user_games_by_game_id_and_user_id(gameId, playerId)
+        
+        playersToAdd = set(playerIds).difference(set(existingGame.playerIds))
+        for playerId in playersToAdd:
+            UserGameModel.create_userGameModel(gameId, playerId, existingGame.gameName)
             
         args['playerIds'] = playerIds
         
