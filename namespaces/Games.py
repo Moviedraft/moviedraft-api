@@ -9,12 +9,12 @@ from flask import abort, make_response, jsonify, render_template
 from flask import current_app as app
 from flask_restplus import Namespace, Resource, fields, reqparse
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from datetime import datetime
 from bson.objectid import ObjectId
 from email.utils import parseaddr
 from utilities.Database import mongo
 from utilities.Mailer import Emailer
 from utilities.Executor import executor
+from utilities.DatetimeHelper import convert_to_utc
 from models.GameModel import GameModel
 from models.RuleModel import RuleModel
 from models.MovieModel import MovieModel
@@ -24,14 +24,15 @@ from models.UserGameModel import UserGameModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
 from decorators.RoleAccessDecorator import requires_admin
+import arrow
 
 games_namespace = Namespace('games', description='Draft league game data.')
 
 gamePayload = games_namespace.model('GamePayload', {
         'gameName': fields.String,
-        'startDate': fields.String,
-        'endDate': fields.String,
-        'auctionDate': fields.String,
+        'startDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
+        'endDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
+        'auctionDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'playerBuyIn': fields.Integer,
         'dollarSpendingCap': fields.Integer,
         'playerIds': fields.List(fields.String),
@@ -46,9 +47,9 @@ games_namespace.model('GamePostResponse', {
 
 games_namespace.model('Game', {
         'gameName': fields.String,
-        'startDate': fields.String,
-        'endDate': fields.String,
-        'auctionDate': fields.String,
+        'startDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
+        'endDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
+        'auctionDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'playerBuyIn': fields.Integer,
         'dollarSpendingCap': fields.Integer,
         'movies': fields.List(fields.Nested(movies_namespace.models['MovieModelFields'])),
@@ -70,9 +71,9 @@ class CreateGames(Resource):
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('gameName', required=True)
-        parser.add_argument('startDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d'), required=True)
-        parser.add_argument('endDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d'), required=True)
-        parser.add_argument('auctionDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d %H:%M:%S'), required=True)
+        parser.add_argument('startDate', type=lambda x: arrow.get(x), required=True)
+        parser.add_argument('endDate', type=lambda x: arrow.get(x), required=True)
+        parser.add_argument('auctionDate', type=lambda x: arrow.get(x), required=True)
         parser.add_argument('playerBuyIn', type=int, required=True)
         parser.add_argument('dollarSpendingCap', type=int, required=True)
         parser.add_argument('playerIds', type=list, location='json', required=True)
@@ -88,6 +89,9 @@ class CreateGames(Resource):
             abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(args['gameName'])), 409))
         
         gameId = ObjectId()
+        UtcStartDate = convert_to_utc(args['startDate'])
+        UtcEndDate = convert_to_utc(args['endDate'])
+        UtcAuctionDate = convert_to_utc(args['auctionDate'])
         
         rulesArray = []
         rulesJson = args['rules']
@@ -115,15 +119,15 @@ class CreateGames(Resource):
         for movieId in args['movies']:
             if not MovieModel.load_movie_by_id(movieId):
                 abort(make_response(jsonify(message='MovieId: \'{}\' could not be found.'.format(movieId)), 404))
-            MovieBidModel.create_empty_bid(gameId, movieId, args['auctionDate'])
+            MovieBidModel.create_empty_bid(gameId, movieId, UtcAuctionDate)
             
         game = GameModel(
                 id=gameId,
                 gameName=args['gameName'],
                 gameNameLowerCase=args['gameName'].lower(),
-                startDate=args['startDate'],
-                endDate=args['endDate'],
-                auctionDate=args['auctionDate'],
+                startDate=UtcStartDate,
+                endDate=UtcEndDate,
+                auctionDate=UtcAuctionDate,
                 playerBuyIn=args['playerBuyIn'],
                 dollarSpendingCap=args['dollarSpendingCap'],
                 movies=args['movies'],
@@ -221,9 +225,9 @@ class Game(Resource):
     def put(self, gameId):
         parser = reqparse.RequestParser()
         parser.add_argument('gameName', required=True)
-        parser.add_argument('startDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d'), required=True)
-        parser.add_argument('endDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d'), required=True)
-        parser.add_argument('auctionDate', type=lambda x: datetime.strptime(x,'%Y-%m-%d %H:%M:%S'), required=True)
+        parser.add_argument('startDate', type=lambda x: arrow.get(x), required=True)
+        parser.add_argument('endDate', type=lambda x: arrow.get(x), required=True)
+        parser.add_argument('auctionDate', type=lambda x: arrow.get(x), required=True)
         parser.add_argument('playerBuyIn', type=int, required=True)
         parser.add_argument('dollarSpendingCap', type=int, required=True)
         parser.add_argument('playerIds', type=list, location='json', required=True)
@@ -249,6 +253,10 @@ class Game(Resource):
             if gameWithRequestedNewName:
                 abort(make_response(jsonify(message='Game name: \'{}\' already exists.'
                                             .format(args['gameName'])), 409))
+        
+        args['startDate'] = convert_to_utc(args['startDate'])
+        args['endDate'] = convert_to_utc(args['endDate'])
+        args['auctionDate'] = convert_to_utc(args['auctionDate'])
         
         filteredPlayerIds = [value for value in args['playerIds'] if value != current_user.id 
                              and value.lower() != current_user.email.lower()]

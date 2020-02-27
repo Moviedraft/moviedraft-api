@@ -6,8 +6,8 @@ Created on Mon Nov 25 21:14:25 2019
 """
 
 from utilities.Database import mongo
-from datetime import datetime
 from bson.objectid import ObjectId
+from utilities.DatetimeHelper import string_format_date
 
 class GameModel():
     def __init__(self, id, gameName, gameNameLowerCase, startDate, endDate, auctionDate,
@@ -68,9 +68,9 @@ class GameModel():
                 id=str(game['_id']),
                 gameName=game['gameName'],
                 gameNameLowerCase=game['gameName'].lower(),
-                startDate=datetime.strftime(game['startDate'], '%Y-%m-%d'),
-                endDate=datetime.strftime(game['endDate'], '%Y-%m-%d'),
-                auctionDate=game['auctionDate'],
+                startDate=string_format_date(game['startDate']),
+                endDate=string_format_date(game['endDate']),
+                auctionDate=string_format_date(game['auctionDate']),
                 playerBuyIn=game['playerBuyIn'],
                 dollarSpendingCap=game['dollarSpendingCap'],
                 movies=game['movies'],
