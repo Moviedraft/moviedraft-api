@@ -34,7 +34,7 @@ def add_token_to_database(encoded_token, identity_claim):
 
 def get_token_expiry(encoded_token):
     decoded_token = decode_token(encoded_token)
-    expires = arrow.get(decoded_token['exp']).format()
+    expires = arrow.get(decoded_token['exp']).format('YYYY-MM-DDTHH:mm:ss.SSSZ').replace('+0000', 'Z')
     return expires
 
 def is_token_revoked(decoded_token):
