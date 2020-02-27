@@ -31,13 +31,13 @@ login_namespace.model('RequestAuthUriModel',{
 
 login_namespace.model('AuthModel', {
         'access_token': fields.String,
-        'ExpiresAt': fields.DateTime(dt_format=u'rfc822'),
+        'ExpiresAt': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'refresh_token': fields.String
         })
 
 login_namespace.model('AuthRefreshModel', {
         'access_token': fields.String,
-        'ExpiresAt': fields.DateTime(dt_format=u'rfc822')
+        'ExpiresAt': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00')
         })
 
 @login_namespace.route('')

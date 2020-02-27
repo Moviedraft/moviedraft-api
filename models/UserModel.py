@@ -8,6 +8,7 @@ Created on Tue Nov 19 10:03:06 2019
 from utilities.Database import mongo
 from bson.objectid import ObjectId
 from models.UserGameModel import UserGameModel
+from utilities.DatetimeHelper import convert_to_utc, string_format_date
 
 class UserModel():
     def __init__(self, id, userHandle, firstName, lastName, email, picture, role, lastLoggedIn, games=[]):
@@ -47,7 +48,7 @@ class UserModel():
                                              'email': self.email,
                                              'picture': self.picture,
                                              'role': self.role,
-                                             'lastLoggedIn': self.lastLoggedIn
+                                             'lastLoggedIn': convert_to_utc(self.lastLoggedIn)
                                             }})
         if result.modified_count == 1:
             return self.load_user_by_id(self.id)
@@ -83,6 +84,6 @@ class UserModel():
                 email = user['emailAddress'],
                 picture = user['picture'],
                 role = user['role'],
-                lastLoggedIn = user['lastLoggedIn'],
+                lastLoggedIn = string_format_date(user['lastLoggedIn']),
                 games=[userGame.serialize() for userGame in userGames])
     

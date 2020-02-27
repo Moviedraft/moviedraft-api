@@ -24,7 +24,7 @@ users_namespace.model('User',{
         'email': fields.String,
         'picture': fields.String,
         'role': fields.Integer,
-        'lastLoggedIn': fields.DateTime(dt_format='iso8601'),
+        'lastLoggedIn': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'games': fields.List(
                 fields.Nested(users_namespace.model('UserGame', {
                         'id': fields.String,
