@@ -21,7 +21,7 @@ class Movie:
         self.distributor = distributor
         self.url = url
         self.domesticGross = domesticGross
-        self.lastUpdated = datetime.strptime(datetime.today().isoformat() , '%Y-%m-%dT%H:%M:%S.%f')     
+        self.lastUpdated = datetime.strptime(datetime.utcnow().isoformat() , '%Y-%m-%dT%H:%M:%S.%f')     
 
 from selenium import webdriver
 from pymongo import MongoClient
