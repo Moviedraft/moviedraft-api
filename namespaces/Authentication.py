@@ -122,8 +122,6 @@ class loginValidate(Resource):
             games = GameModel.load_games_by_user_email(userEmail)
             for game in games:
                 game.playerIds = [storedUser.id if x.lower() == userEmail.lower() else x for x in game.playerIds]
-                print(game.playerIds)
-                print(userEmail.lower())
                 if not game.update_game():
                     abort(make_response(jsonify(message='Could not add user ID: \'{}\' ' +
                                                 'to game ID: \'{}\''
