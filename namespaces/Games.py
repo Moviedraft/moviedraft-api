@@ -329,7 +329,7 @@ class Game(Resource):
         
         movieBids = MovieBidModel.load_bids_by_gameId(gameId)
         for movieBid in movieBids:
-            movieBid.auctionExpiry = updatedGame.auctionDate
+            movieBid.auctionExpiry = args['auctionDate']
             movieBid.update_bid()
         
         if oldgameNameLowerCase != updatedGame.gameNameLowerCase:

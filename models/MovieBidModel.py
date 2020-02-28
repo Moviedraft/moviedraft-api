@@ -5,6 +5,7 @@ Created on Thu Feb  6 07:28:06 2020
 @author: Jason
 """
 from utilities.Database import mongo
+from utilities.DatetimeHelper import string_format_date
 from bson.objectid import ObjectId
 
 class MovieBidModel():
@@ -59,7 +60,7 @@ class MovieBidModel():
                 game_id=str(bid['game_id']),
                 user_id=str(bid['user_id']),
                 movie_id=str(bid['movie_id']),
-                auctionExpiry=bid['auctionExpiry'],
+                auctionExpiry=string_format_date(bid['auctionExpiry']),
                 auctionExpirySet=bid['auctionExpirySet'],
                 bid=bid['bid']
                 )
@@ -84,7 +85,7 @@ class MovieBidModel():
                     game_id=str(bid['game_id']),
                     user_id=str(bid['user_id']),
                     movie_id=str(bid['movie_id']),
-                    auctionExpiry=bid['auctionExpiry'],
+                    auctionExpiry=string_format_date(bid['auctionExpiry']),
                     auctionExpirySet=bid['auctionExpirySet'],
                     bid=bid['bid']
                     )
@@ -108,7 +109,7 @@ class MovieBidModel():
                 game_id=str(bidItem['game_id']),
                 user_id=str(bidItem['user_id']),
                 movie_id=str(bidItem['movie_id']),
-                auctionExpiry=bidItem['auctionExpiry'],
+                auctionExpiry=string_format_date(bidItem['auctionExpiry']),
                 auctionExpirySet=bidItem['auctionExpirySet'],
                 bid=bidItem['bid']
                 )
