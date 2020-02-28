@@ -17,6 +17,8 @@ from flask_jwt_extended import (
         )
 from bson.objectid import ObjectId
 from models.UserModel import UserModel
+from models.GameModel import GameModel
+from models.UserGameModel import UserGameModel
 from utilities.Database import mongo
 from utilities.WebApplicationClient import client
 from utilities.TokenHelpers import revoke_token, add_token_to_database, get_token_expiry
@@ -116,6 +118,20 @@ class loginValidate(Resource):
                 })
     
             storedUser = UserModel.load_user_by_email(userEmail)
+            
+            games = GameModel.load_games_by_user_email(userEmail)
+            for game in games:
+                game.playerIds = [storedUser.id if x.lower() == userEmail.lower() else x for x in game.playerIds]
+                print(game.playerIds)
+                print(userEmail.lower())
+                if not game.update_game():
+                    abort(make_response(jsonify(message='Could not add user ID: \'{}\' ' +
+                                                'to game ID: \'{}\''
+                                                .format(storedUser.id, game._id)), 500))
+                if not UserGameModel.create_userGameModel(game._id, storedUser.id, game.gameName):
+                    abort(make_response(jsonify(message='Could not associate user ID: \'{}\' ' +
+                                                'with invited game ID: \'{}\''
+                                                .format(storedUser.id, game._id)), 500))
         
         storedUser.lastLoggedIn = datetime.utcnow()
         

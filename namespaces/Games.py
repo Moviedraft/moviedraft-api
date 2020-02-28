@@ -5,7 +5,7 @@ Created on Mon Nov 25 20:16:39 2019
 @author: Jason
 """
 
-from flask import abort, make_response, jsonify, render_template
+from flask import abort, make_response, jsonify, render_template, redirect
 from flask import current_app as app
 from flask_restplus import Namespace, Resource, fields, reqparse
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -139,14 +139,14 @@ class CreateGames(Resource):
 
         result = mongo.db.games.insert_one(game.__dict__)
         
-        commissioneruUserGame = UserGameModel.create_userGameModel(gameId, current_user.id, game.gameName)
+        commissioneruUserGame = UserGameModel.create_userGameModel(gameId, current_user.id, game.gameName, True)
         if not commissioneruUserGame:
             abort(make_response(jsonify(message='Unable to associate commissionerId \'{}\' with game: \'{}\'.'
                                                 .format(current_user.id, game.gameName)), 500))
         
         for playerId in playerIds:
             if ObjectId.is_valid(playerId):
-                userGame = UserGameModel.create_userGameModel(gameId, player.id, args['gameName'])
+                userGame = UserGameModel.create_userGameModel(gameId, playerId, args['gameName'])
                 if not userGame:
                     abort(make_response(jsonify(message='Unable to associate userId \'{}\' with game: \'{}\'.'
                                                 .format(playerId, game.gameName)), 500))
@@ -342,3 +342,43 @@ class Game(Resource):
                                                 .format(userGame.game_id, userGame.user_id)), 500))
         
         return make_response(updatedGame.__dict__, 200)
+
+@games_namespace.route('/<string:gameId>/join')
+class JoinGame(Resource):
+    @jwt_required
+    @games_namespace.response(200, 'Success')
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(403, 'Forbidden')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def post(self, gameId):
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
+        
+        game = GameModel.load_game_by_id(gameId)
+        userGame = UserGameModel.load_user_game_by_game_id_and_user_id(gameId, current_user.id)
+        
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+        
+        if not userGame:
+            abort(make_response(jsonify(message='User-Game association could not be found ' + 
+                                        'for game ID: \'{}\' and user ID \'{}\'.'
+                                        .format(gameId, current_user.id)), 404))
+        
+        if current_user.id not in game.playerIds:
+            abort(make_response(jsonify(message='User ID: \'{}\' has not been added to game ID: \'{}\'.'
+                                        .format(current_user.id, gameId)), 403))
+            
+        game.playerIds.append(current_user.id)
+        if not game.update_game():
+            abort(make_response(jsonify(message='User ID: \'{}\' could not be associated with game ID: \'{}\'.'
+                                        .format(current_user.id, gameId)), 500))
+        
+        userGame.joined = True
+        if not userGame.update_userGameModel():
+            abort(make_response(jsonify(message='User-Game association could not be created ' + 
+                                        'for game ID: \'{}\' and user ID \'{}\'.'
+                                        .format(gameId, current_user.id)), 500))
+        
+        return make_response('', 200)
