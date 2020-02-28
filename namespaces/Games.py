@@ -240,13 +240,14 @@ class Game(Resource):
         current_user = UserModel.load_user_by_id(userIdentity['id'])
         
         existingGame = GameModel.load_game_by_id(gameId)
-        oldgameNameLowerCase = existingGame.gameNameLowerCase
         
         if not existingGame:
             abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
             
         if existingGame.commissionerId != current_user.id:
             abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
+        
+        oldgameNameLowerCase = existingGame.gameNameLowerCase
         
         if args['gameName'].lower() != oldgameNameLowerCase:
             gameWithRequestedNewName = GameModel.load_game_by_name(args['gameName'])
