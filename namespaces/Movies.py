@@ -11,22 +11,24 @@ from flask_jwt_extended import jwt_required
 from datetime import datetime, timedelta
 from bson.objectid import ObjectId
 from utilities.Database import mongo
+from utilities.DatetimeHelper import convert_to_utc, string_format_date
 from models.MovieModel import MovieModel
 from models.MovieBidModel import MovieBidModel
 from models.GameModel import GameModel
 from models.UserModel import UserModel
 from enums.MovieReleaseType import MovieReleaseType
+import arrow
 
 movies_namespace = Namespace('movies', description='Retrieve movie data.')
 
 movies_namespace.model('MovieModelFields',{ 
         'id': fields.String,
-        'releaseDate': fields.String,
+        'releaseDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'title': fields.String,
         'releaseType': fields.String,
         'distributor': fields.String,
         'domesticGross': fields.Integer,
-        'lastUpdated': fields.String
+        'lastUpdated': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00')
         })
 
 movies_namespace.model('Movies',{
@@ -37,7 +39,7 @@ movies_namespace.model('MovieBidRequest', {
         'gameId': fields.String,
         'userId': fields.String,
         'movieId': fields.String,
-        'auctionExpiry': fields.DateTime(dt_format=u'iso8601'),
+        'auctionExpiry': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'bid': fields.Integer
         })
 
@@ -64,12 +66,14 @@ class Movies(Resource):
         endDate = request.args.get('endDate')
     
         if not startDate:
-            startDate = datetime.min.isoformat().split('T', 1)[0]
+            startDate = datetime.min
         if not endDate:
-            endDate = datetime.max.isoformat().split('T', 1)[0]
+            endDate = datetime.max
     
-        releaseDateFilterCondition = { '$lte': datetime.strptime(endDate, '%Y-%m-%d'),
-                                      '$gte': datetime.strptime(startDate, '%Y-%m-%d') }
+        releaseDateFilterCondition = { '$lte': convert_to_utc(endDate),
+                                      '$gte': convert_to_utc(startDate) }
+        
+        print(releaseDateFilterCondition)
 
         if releaseType:
             if MovieReleaseType.has_value(releaseType):
@@ -78,12 +82,12 @@ class Movies(Resource):
                 for movie in moviesResult:
                     movieModel = MovieModel(
                         movie['_id'], 
-                        movie['releaseDate'], 
+                        string_format_date(movie['releaseDate']), 
                         movie['title'], 
                         movie['releaseType'], 
                         movie['distributor'],
                         movie['domesticGross'],
-                        movie['lastUpdated'])
+                        string_format_date(movie['lastUpdated']))
                     movies.append(movieModel.__dict__)
             return make_response(jsonify(movies=movies), 200)
         else:
@@ -91,12 +95,12 @@ class Movies(Resource):
             for movie in moviesResult:
                 movieModel = MovieModel(
                     movie['_id'], 
-                    movie['releaseDate'], 
+                    string_format_date(movie['releaseDate']), 
                     movie['title'], 
                     movie['releaseType'], 
                     movie['distributor'],
                     movie['domesticGross'],
-                    movie['lastUpdated'])
+                    string_format_date(movie['lastUpdated']))
                 movies.append(movieModel.__dict__)
             return make_response(jsonify(movies=movies), 200)
 
@@ -123,7 +127,7 @@ class GameMovies(Resource):
             abort(make_response(jsonify(message='Could not find bid for gameId: \'{}\' and movieId: \'{}\'.'.
                                         format(gameId, movieId)), 404))
         
-        if datetime.utcnow() > game.auctionDate and bidItem.auctionExpirySet == False:
+        if arrow.utcnow() > arrow.get(game.auctionDate) and bidItem.auctionExpirySet == False:
                 bidItem.auctionExpiry = datetime.utcnow() + timedelta(seconds=game.auctionItemsExpireInSeconds)
                 bidItem.auctionExpirySet = True
                 bidItem = bidItem.update_bid()
@@ -170,7 +174,7 @@ class MovieBid(Resource):
             abort(make_response(jsonify(message='Auction for gameId: \'{}\' and movieId: \'{}\' has not begun yet.'.
                                         format(args['gameId'], args['movieId'])), 403))
         
-        if datetime.utcnow() > highestBid.auctionExpiry:
+        if arrow.utcnow() > arrow.get(highestBid.auctionExpiry):
             abort(make_response(jsonify(message='Bid item for gameId: \'{}\' and movieId: \'{}\' has closed.'.
                                         format(args['gameId'], args['movieId'])), 403))
             

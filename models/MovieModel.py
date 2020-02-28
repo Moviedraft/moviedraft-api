@@ -6,7 +6,7 @@ Created on Thu Nov 28 14:53:49 2019
 """
 
 from utilities.Database import mongo
-from datetime import datetime
+from utilities.DatetimeHelper import string_format_date
 from bson.objectid import ObjectId
 
 class MovieModel():
@@ -34,10 +34,10 @@ class MovieModel():
             return None
         return MovieModel(
                 id=movie['_id'],
-                releaseDate=datetime.strftime(movie['releaseDate'], '%Y-%m-%d'),
+                releaseDate=string_format_date(movie['releaseDate']),
                 title=movie['title'],
                 releaseType=movie['releaseType'],
                 distributor=movie['distributor'],
                 domesticGross=movie['domesticGross'],
-                lastUpdated=datetime.strptime(datetime.today().isoformat() , '%Y-%m-%dT%H:%M:%S.%f')
+                lastUpdated=string_format_date(movie['lastUpdated'])
                 )
