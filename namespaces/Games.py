@@ -5,7 +5,7 @@ Created on Mon Nov 25 20:16:39 2019
 @author: Jason
 """
 
-from flask import abort, make_response, jsonify, render_template, redirect
+from flask import abort, make_response, jsonify, render_template
 from flask import current_app as app
 from flask_restplus import Namespace, Resource, fields, reqparse
 from flask_jwt_extended import get_jwt_identity, jwt_required
