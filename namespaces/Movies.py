@@ -7,7 +7,7 @@ Created on Thu Nov 28 13:42:32 2019
 
 from flask import request, make_response, jsonify, abort
 from flask_restplus import Namespace, Resource, fields, reqparse
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 from bson.objectid import ObjectId
 from utilities.Database import mongo
@@ -43,7 +43,13 @@ movies_namespace.model('MovieBidRequest', {
         'bid': fields.Integer
         })
 
-movies_namespace.model('MovieBidPost', {
+movieBidPost = movies_namespace.model('MovieBidPost', {
+        'gameId': fields.String,
+        'movieId': fields.String,
+        'bid': fields.Integer
+        })
+
+movies_namespace.model('MovieBidPostResponse', {
         'gameId': fields.String,
         'userId': fields.String,
         'movieId': fields.String,
@@ -137,7 +143,8 @@ class GameMovies(Resource):
 @movies_namespace.route('/bid')
 class MovieBid(Resource):
     @jwt_required
-    @movies_namespace.response(200, 'Success', movies_namespace.models['MovieBidPost'])
+    @movies_namespace.expect(movieBidPost)
+    @movies_namespace.response(200, 'Success', movies_namespace.models['MovieBidPostResponse'])
     @movies_namespace.response(401, 'Authentication Error')
     @movies_namespace.response(403, 'Forbidden')
     @movies_namespace.response(404, 'Not Found')
@@ -145,15 +152,12 @@ class MovieBid(Resource):
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('gameId', required=True)
-        parser.add_argument('userId', required=True)
         parser.add_argument('movieId', required=True)
         parser.add_argument('bid', type=int, required=True)
         args = parser.parse_args()
         
-        user = UserModel.load_user_by_id(args['userId'])
-        if not user:
-            abort(make_response(jsonify(message='User ID: \'{}\' could not be found.'.
-                                        format(args['userId'])), 404))
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
         
         game = GameModel.load_game_by_id(args['gameId'])
         if not game:
@@ -180,7 +184,7 @@ class MovieBid(Resource):
             
         if highestBid.bid == None or args['bid'] > highestBid.bid:
             highestBid.bid = args['bid']
-            highestBid.user_id = ObjectId(args['userId'])
+            highestBid.user_id = ObjectId(current_user.id)
             updatedRecord = highestBid.update_bid()
             return make_response(updatedRecord.__dict__, 200)
         else:
