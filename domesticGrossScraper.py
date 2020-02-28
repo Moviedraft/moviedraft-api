@@ -22,6 +22,13 @@ db = client.get_database(sys.argv[2])
 
 options = webdriver.ChromeOptions()
 options.add_argument('headless')
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-gpu')
+options.add_argument('--window-size=1280x1696')
+options.add_argument('--hide-scrollbars')
+options.add_argument('--single-process')
+options.add_argument('--ignore-certificate-errors')
+options.add_argument('user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36')
 
 driver = webdriver.Chrome(sys.argv[3], options=options)
 
@@ -38,7 +45,7 @@ for movie in movies:
     
     db.movies.update_one({'_id': movie['_id']},  
                           {'$set': {'domesticGross': formattedDomesticGross, 
-                                    'lastUpdated': datetime.strptime(datetime.today().isoformat() , '%Y-%m-%dT%H:%M:%S.%f') }})
+                                    'lastUpdated': datetime.strptime(datetime.utcnow().isoformat() , '%Y-%m-%dT%H:%M:%S.%f') }})
     
     print('Movie title: \'{}\' updated'.format(movie['title']))
     
