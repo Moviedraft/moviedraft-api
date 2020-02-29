@@ -247,6 +247,10 @@ class Game(Resource):
         if existingGame.commissionerId != current_user.id:
             abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
         
+        if arrow.utcnow() > arrow.get(existingGame.auctionDate):
+            abort(make_response(jsonify(message='Game ID: \'{}\' cannot be edited after the auction date: \'{}\''
+                                        .format(existingGame._id, existingGame.auctionDate)), 403))
+        
         oldgameNameLowerCase = existingGame.gameNameLowerCase
         
         if args['gameName'].lower() != oldgameNameLowerCase:
