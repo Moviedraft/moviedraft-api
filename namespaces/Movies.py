@@ -28,7 +28,8 @@ movies_namespace.model('MovieModelFields',{
         'releaseType': fields.String,
         'distributor': fields.String,
         'domesticGross': fields.Integer,
-        'lastUpdated': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00')
+        'lastUpdated': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
+        'posterUrl': fields.String
         })
 
 movies_namespace.model('Movies',{
@@ -86,6 +87,7 @@ class Movies(Resource):
                 moviesResult = mongo.db.movies.find({'releaseType': releaseType, 
                                                      'releaseDate': releaseDateFilterCondition}).sort('releaseDate', 1)
                 for movie in moviesResult:
+                    posterUrl = '' if 'posterUrl' not in movie else movie['posterUrl']
                     movieModel = MovieModel(
                         movie['_id'], 
                         string_format_date(movie['releaseDate']), 
@@ -93,12 +95,14 @@ class Movies(Resource):
                         movie['releaseType'], 
                         movie['distributor'],
                         movie['domesticGross'],
-                        string_format_date(movie['lastUpdated']))
+                        string_format_date(movie['lastUpdated']),
+                        posterUrl)
                     movies.append(movieModel.__dict__)
             return make_response(jsonify(movies=movies), 200)
         else:
             moviesResult = mongo.db.movies.find({'releaseDate': releaseDateFilterCondition}).sort('releaseDate', 1) 
             for movie in moviesResult:
+                posterUrl = '' if 'posterUrl' not in movie else movie['posterUrl']
                 movieModel = MovieModel(
                     movie['_id'], 
                     string_format_date(movie['releaseDate']), 
@@ -106,7 +110,8 @@ class Movies(Resource):
                     movie['releaseType'], 
                     movie['distributor'],
                     movie['domesticGross'],
-                    string_format_date(movie['lastUpdated']))
+                    string_format_date(movie['lastUpdated']),
+                    posterUrl)
                 movies.append(movieModel.__dict__)
             return make_response(jsonify(movies=movies), 200)
 
