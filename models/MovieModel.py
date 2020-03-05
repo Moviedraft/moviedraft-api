@@ -10,7 +10,7 @@ from utilities.DatetimeHelper import string_format_date
 from bson.objectid import ObjectId
 
 class MovieModel():
-    def __init__(self, id, releaseDate, title, releaseType, distributor, domesticGross, lastUpdated):
+    def __init__(self, id, releaseDate, title, releaseType, distributor, domesticGross, lastUpdated, posterUrl):
         self.id = str(id)
         self.releaseDate = releaseDate
         self.title = title
@@ -18,6 +18,7 @@ class MovieModel():
         self.distributor = distributor
         self.domesticGross = domesticGross
         self.lastUpdated = lastUpdated
+        self.posterUrl = posterUrl
     
     @classmethod
     def load_movie_by_id(cls, id):
@@ -32,6 +33,7 @@ class MovieModel():
         movie = mongo.db.movies.find_one(queryDict)
         if not movie:
             return None
+        posterUrl = '' if 'posterUrl' not in movie else movie['posterUrl']
         return MovieModel(
                 id=movie['_id'],
                 releaseDate=string_format_date(movie['releaseDate']),
@@ -39,5 +41,6 @@ class MovieModel():
                 releaseType=movie['releaseType'],
                 distributor=movie['distributor'],
                 domesticGross=movie['domesticGross'],
-                lastUpdated=string_format_date(movie['lastUpdated'])
+                lastUpdated=string_format_date(movie['lastUpdated']),
+                posterUrl=posterUrl
                 )
