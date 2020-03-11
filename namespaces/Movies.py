@@ -123,6 +123,9 @@ class GameMovies(Resource):
     @movies_namespace.response(404, 'Not Found')
     @movies_namespace.response(500, 'Internal Server Error')
     def get(self, gameId, movieId):
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
+        
         game = GameModel.load_game_by_id(gameId)
         if not game:
             abort(make_response(jsonify(message='Game name: \'{}\' could not be found.'.
@@ -138,7 +141,9 @@ class GameMovies(Resource):
             abort(make_response(jsonify(message='Could not find bid for gameId: \'{}\' and movieId: \'{}\'.'.
                                         format(gameId, movieId)), 404))
         
-        if arrow.utcnow() > arrow.get(game.auctionDate) and bidItem.auctionExpirySet == False:
+        if (str(game.commissionerId) == current_user.id 
+            and arrow.utcnow() > arrow.get(game.auctionDate) 
+            and bidItem.auctionExpirySet == False):
                 bidItem.auctionExpiry = datetime.utcnow() + timedelta(seconds=game.auctionItemsExpireInSeconds)
                 bidItem.auctionExpirySet = True
                 bidItem = bidItem.update_bid()
