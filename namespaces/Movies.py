@@ -41,7 +41,9 @@ movies_namespace.model('MovieBidRequest', {
         'userId': fields.String,
         'movieId': fields.String,
         'auctionExpiry': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
-        'bid': fields.Integer
+        'bid': fields.Integer,
+        'dollarSpendingCap': fields.Integer,
+        'userHandle': fields.String
         })
 
 movieBidPost = movies_namespace.model('MovieBidPost', {
@@ -54,7 +56,10 @@ movies_namespace.model('MovieBidPostResponse', {
         'gameId': fields.String,
         'userId': fields.String,
         'movieId': fields.String,
-        'bid': fields.Integer
+        'auctionExpiry': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
+        'bid': fields.Integer,
+        'dollarSpendingCap': fields.Integer,
+        'userHandle': fields.String
         })
 
 @movies_namespace.route('')
@@ -195,6 +200,7 @@ class MovieBid(Resource):
         if highestBid.bid == None or args['bid'] > highestBid.bid:
             highestBid.bid = args['bid']
             highestBid.user_id = ObjectId(current_user.id)
+            highestBid.userHandle = current_user.userHandle
             updatedRecord = highestBid.update_bid()
             return make_response(updatedRecord.__dict__, 200)
         else:
