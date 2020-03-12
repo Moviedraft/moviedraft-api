@@ -9,7 +9,8 @@ from utilities.DatetimeHelper import string_format_date
 from bson.objectid import ObjectId
 
 class MovieBidModel():
-    def __init__(self, id, game_id, user_id, movie_id, auctionExpiry, auctionExpirySet, bid):
+    def __init__(self, id, game_id, user_id, movie_id, auctionExpiry, 
+                 auctionExpirySet, bid, dollarSpendingCap, userHandle):
         self.id = id
         self.game_id = game_id
         self.user_id = user_id
@@ -17,6 +18,8 @@ class MovieBidModel():
         self.auctionExpiry = auctionExpiry
         self.auctionExpirySet = auctionExpirySet
         self.bid = bid
+        self.dollarSpendingCap = dollarSpendingCap
+        self.userHandle = userHandle
 
     def update_bid(self):
         if not ObjectId.is_valid(self.user_id):
@@ -29,7 +32,9 @@ class MovieBidModel():
                                          'movie_id': ObjectId(self.movie_id),
                                          'auctionExpiry': self.auctionExpiry,
                                          'auctionExpirySet': self.auctionExpirySet,
-                                         'bid': self.bid
+                                         'bid': self.bid,
+                                         'dollarSpendingCap': self.dollarSpendingCap,
+                                         'userHandle': self.userHandle
                                          })
         updatedRecord = MovieBidModel.load_bid_by_id(self.id)
         return updatedRecord
@@ -62,7 +67,9 @@ class MovieBidModel():
                 movie_id=str(bid['movie_id']),
                 auctionExpiry=string_format_date(bid['auctionExpiry']),
                 auctionExpirySet=bid['auctionExpirySet'],
-                bid=bid['bid']
+                bid=bid['bid'],
+                dollarSpendingCap=bid['dollarSpendingCap'],
+                userHandle=bid['userHandle']
                 )
     
     @classmethod
@@ -87,13 +94,15 @@ class MovieBidModel():
                     movie_id=str(bid['movie_id']),
                     auctionExpiry=string_format_date(bid['auctionExpiry']),
                     auctionExpirySet=bid['auctionExpirySet'],
-                    bid=bid['bid']
+                    bid=bid['bid'],
+                    dollarSpendingCap=bid['dollarSpendingCap'],
+                    userHandle=bid['userHandle']
                     )
             movieBids.append(movieBid)
         return movieBids
         
     @classmethod
-    def create_empty_bid(cls, game_id, movie_id, auctionExpiry):
+    def create_empty_bid(cls, game_id, movie_id, auctionExpiry, dollarSpendingCap):
         id = ObjectId()
         mongo.db.moviebids.insert_one({'_id': id,
                                        'game_id': ObjectId(game_id),
@@ -101,7 +110,9 @@ class MovieBidModel():
                                        'movie_id': ObjectId(movie_id),
                                        'auctionExpiry': auctionExpiry,
                                        'auctionExpirySet': False,
-                                       'bid': None
+                                       'bid': None,
+                                       'dollarSpendingCap': dollarSpendingCap,
+                                       'userHandle': None
                                       })
         bidItem = mongo.db.moviebids.find_one({'_id': id})
         return MovieBidModel(
@@ -111,7 +122,9 @@ class MovieBidModel():
                 movie_id=str(bidItem['movie_id']),
                 auctionExpiry=string_format_date(bidItem['auctionExpiry']),
                 auctionExpirySet=bidItem['auctionExpirySet'],
-                bid=bidItem['bid']
+                bid=bidItem['bid'],
+                dollarSpendingCap=bidItem['dollarSpendingCap'],
+                userHandle=bidItem['userHandle']
                 )
     
     @classmethod

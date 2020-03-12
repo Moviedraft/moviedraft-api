@@ -119,7 +119,7 @@ class CreateGames(Resource):
         for movieId in args['movies']:
             if not MovieModel.load_movie_by_id(movieId):
                 abort(make_response(jsonify(message='MovieId: \'{}\' could not be found.'.format(movieId)), 404))
-            MovieBidModel.create_empty_bid(gameId, movieId, UtcAuctionDate)
+            MovieBidModel.create_empty_bid(gameId, movieId, UtcAuctionDate, args['dollarSpendingCap'])
             
         game = GameModel(
                 id=gameId,
@@ -335,6 +335,7 @@ class Game(Resource):
         movieBids = MovieBidModel.load_bids_by_gameId(gameId)
         for movieBid in movieBids:
             movieBid.auctionExpiry = args['auctionDate']
+            movieBid.dollarSpendingCap = args['dollarSpendingCap']
             movieBid.update_bid()
         
         if oldgameNameLowerCase != updatedGame.gameNameLowerCase:
