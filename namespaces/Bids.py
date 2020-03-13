@@ -53,7 +53,6 @@ class GameBids(Resource):
     @jwt_required
     @bids_namespace.response(200, 'Success', bids_namespace.models['Bids'])
     @bids_namespace.response(401, 'Authentication Error')
-    @bids_namespace.response(404, 'Not Found')
     @bids_namespace.response(500, 'Internal Server Error')
     def get(self, gameId):
         userIdentity = get_jwt_identity()
@@ -104,6 +103,7 @@ class Bid(Resource):
     @jwt_required
     @bids_namespace.expect(bidPost)
     @bids_namespace.response(200, 'Success', bids_namespace.models['BidPostResponse'])
+    @bids_namespace.response(400, 'Bad Request')
     @bids_namespace.response(401, 'Authentication Error')
     @bids_namespace.response(403, 'Forbidden')
     @bids_namespace.response(404, 'Not Found')
