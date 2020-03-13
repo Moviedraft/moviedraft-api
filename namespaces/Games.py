@@ -18,7 +18,7 @@ from utilities.DatetimeHelper import convert_to_utc
 from models.GameModel import GameModel
 from models.RuleModel import RuleModel
 from models.MovieModel import MovieModel
-from models.MovieBidModel import MovieBidModel
+from models.BidModel import BidModel
 from models.UserModel import UserModel
 from models.UserGameModel import UserGameModel
 from namespaces.Movies import movies_namespace
@@ -119,7 +119,7 @@ class CreateGames(Resource):
         for movieId in args['movies']:
             if not MovieModel.load_movie_by_id(movieId):
                 abort(make_response(jsonify(message='MovieId: \'{}\' could not be found.'.format(movieId)), 404))
-            MovieBidModel.create_empty_bid(gameId, movieId, UtcAuctionDate, args['dollarSpendingCap'])
+            BidModel.create_empty_bid(gameId, movieId, UtcAuctionDate, args['dollarSpendingCap'])
             
         game = GameModel(
                 id=gameId,
@@ -206,7 +206,7 @@ class Game(Resource):
         game = GameModel.load_game_by_id(gameId)
         if game:
             UserGameModel.delete_user_games_by_game_id(game._id)
-            MovieBidModel.delete_movie_bids_by_game_id(game._id)
+            BidModel.delete_bids_by_game_id(game._id)
             try:
                 mongo.db.games.delete_one({'gameName': game.gameName})
                 return make_response('', 200)
@@ -312,11 +312,11 @@ class Game(Resource):
         
         moviesToDelete = set(existingGame.movies).difference(set(movieIds))
         for movieId in moviesToDelete:
-            MovieBidModel.delete_movie_bids_by_game_id_and_movie_id(gameId, movieId)
+            BidModel.delete_bids_by_game_id_and_movie_id(gameId, movieId)
         
         moviesToAdd = set(movieIds).difference(set(existingGame.movies))
         for movieId in moviesToAdd:
-            MovieBidModel.create_empty_bid(gameId, movieId, existingGame.auctionDate)
+            BidModel.create_empty_bid(gameId, movieId, existingGame.auctionDate)
 
         for key, value in args.items():
             setattr(existingGame, key, value)
@@ -332,7 +332,7 @@ class Game(Resource):
         
         updatedGame = existingGame.update_game()
         
-        movieBids = MovieBidModel.load_bids_by_gameId(gameId)
+        movieBids = BidModel.load_bids_by_gameId(gameId)
         for movieBid in movieBids:
             movieBid.auctionExpiry = args['auctionDate']
             movieBid.dollarSpendingCap = args['dollarSpendingCap']

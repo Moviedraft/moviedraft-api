@@ -8,7 +8,7 @@ from utilities.Database import mongo
 from utilities.DatetimeHelper import string_format_date
 from bson.objectid import ObjectId
 
-class MovieBidModel():
+class BidModel():
     def __init__(self, id, game_id, user_id, movie_id, auctionExpiry, 
                  auctionExpirySet, bid, dollarSpendingCap, userHandle):
         self.id = id
@@ -21,12 +21,25 @@ class MovieBidModel():
         self.dollarSpendingCap = dollarSpendingCap
         self.userHandle = userHandle
 
+    def serialize(self): 
+        return {           
+        'id': self.id,
+        'game_id': self.game_id,
+        'user_id': self.user_id,
+        'movie_id': self.movie_id,
+        'auctionExpiry': self.auctionExpiry,
+        'auctionExpirySet': self.auctionExpirySet,
+        'bid': self.bid,
+        'dollarSpendingCap': self.dollarSpendingCap,
+        'userHandle': self.userHandle
+        }
+        
     def update_bid(self):
         if not ObjectId.is_valid(self.user_id):
             userId = None
         else:
             userId = ObjectId(self.user_id)
-        mongo.db.moviebids.replace_one({'_id': ObjectId(self.id)}, 
+        mongo.db.bids.replace_one({'_id': ObjectId(self.id)}, 
                                         {'game_id': ObjectId(self.game_id),
                                          'user_id': userId,
                                          'movie_id': ObjectId(self.movie_id),
@@ -36,7 +49,7 @@ class MovieBidModel():
                                          'dollarSpendingCap': self.dollarSpendingCap,
                                          'userHandle': self.userHandle
                                          })
-        updatedRecord = MovieBidModel.load_bid_by_id(self.id)
+        updatedRecord = BidModel.load_bid_by_id(self.id)
         return updatedRecord
     
     @classmethod
@@ -57,10 +70,10 @@ class MovieBidModel():
     
     @classmethod
     def load_bid(cls, queryDict):
-        bid = mongo.db.moviebids.find_one(queryDict)
+        bid = mongo.db.bids.find_one(queryDict)
         if not bid:
             return None
-        return MovieBidModel(
+        return BidModel(
                 id=str(bid['_id']),
                 game_id=str(bid['game_id']),
                 user_id=str(bid['user_id']),
@@ -81,13 +94,21 @@ class MovieBidModel():
         return bids
     
     @classmethod
+    def load_bids_by_gameId_and_userId(cls, gameId, userId):
+        if not ObjectId.is_valid(gameId) or not ObjectId.is_valid(userId):
+            return None
+        queryDict = {'game_id': ObjectId(gameId), 'user_id': ObjectId(userId)}
+        bids = cls.load_bids(queryDict)  
+        return bids
+    
+    @classmethod
     def load_bids(cls, queryDict):
-        bids = mongo.db.moviebids.find(queryDict)
+        bids = mongo.db.bids.find(queryDict)
         if not bids:
             return None
         movieBids = []
         for bid in bids:
-            movieBid = MovieBidModel(
+            movieBid = BidModel(
                     id=str(bid['_id']),
                     game_id=str(bid['game_id']),
                     user_id=str(bid['user_id']),
@@ -104,18 +125,18 @@ class MovieBidModel():
     @classmethod
     def create_empty_bid(cls, game_id, movie_id, auctionExpiry, dollarSpendingCap):
         id = ObjectId()
-        mongo.db.moviebids.insert_one({'_id': id,
-                                       'game_id': ObjectId(game_id),
-                                       'user_id': None,
-                                       'movie_id': ObjectId(movie_id),
-                                       'auctionExpiry': auctionExpiry,
-                                       'auctionExpirySet': False,
-                                       'bid': None,
-                                       'dollarSpendingCap': dollarSpendingCap,
-                                       'userHandle': None
-                                      })
-        bidItem = mongo.db.moviebids.find_one({'_id': id})
-        return MovieBidModel(
+        mongo.db.bids.insert_one({'_id': id,
+                                  'game_id': ObjectId(game_id),
+                                  'user_id': None,
+                                  'movie_id': ObjectId(movie_id),
+                                  'auctionExpiry': auctionExpiry,
+                                  'auctionExpirySet': False,
+                                  'bid': None,
+                                  'dollarSpendingCap': dollarSpendingCap,
+                                  'userHandle': None
+                                 })
+        bidItem = mongo.db.bids.find_one({'_id': id})
+        return BidModel(
                 id=str(bidItem['_id']),
                 game_id=str(bidItem['game_id']),
                 user_id=str(bidItem['user_id']),
@@ -128,21 +149,21 @@ class MovieBidModel():
                 )
     
     @classmethod
-    def delete_movie_bids_by_game_id(cls, game_id):
+    def delete_bids_by_game_id(cls, game_id):
         if not ObjectId.is_valid(game_id):
             return None
         queryDict = {'game_id': ObjectId(game_id)}
-        result = cls.delete_movie_bids(queryDict)
+        result = cls.delete_bids(queryDict)
         return result
     
     @classmethod
-    def delete_movie_bids_by_game_id_and_movie_id(cls, game_id, movie_id):
+    def delete_bids_by_game_id_and_movie_id(cls, game_id, movie_id):
         if not ObjectId.is_valid(game_id)or not ObjectId.is_valid(movie_id):
             return None
         queryDict = {'game_id': ObjectId(game_id), 'movie_id': ObjectId(movie_id)}
-        result = cls.delete_movie_bids(queryDict)
+        result = cls.delete_bids(queryDict)
         return result
     
     @classmethod
-    def delete_movie_bids(cls, queryDict):
-        mongo.db.moviebids.delete_many(queryDict)
+    def delete_bids(cls, queryDict):
+        mongo.db.bids.delete_many(queryDict)
