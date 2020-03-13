@@ -21,6 +21,19 @@ class BidModel():
         self.dollarSpendingCap = dollarSpendingCap
         self.userHandle = userHandle
 
+    def serialize(self): 
+        return {           
+        'id': self.id,
+        'game_id': self.game_id,
+        'user_id': self.user_id,
+        'movie_id': self.movie_id,
+        'auctionExpiry': self.auctionExpiry,
+        'auctionExpirySet': self.auctionExpirySet,
+        'bid': self.bid,
+        'dollarSpendingCap': self.dollarSpendingCap,
+        'userHandle': self.userHandle
+        }
+        
     def update_bid(self):
         if not ObjectId.is_valid(self.user_id):
             userId = None
@@ -77,6 +90,14 @@ class BidModel():
         if not ObjectId.is_valid(gameId):
             return None
         queryDict = {'game_id': ObjectId(gameId)}
+        bids = cls.load_bids(queryDict)  
+        return bids
+    
+    @classmethod
+    def load_bids_by_gameId_and_userId(cls, gameId, userId):
+        if not ObjectId.is_valid(gameId) or not ObjectId.is_valid(userId):
+            return None
+        queryDict = {'game_id': ObjectId(gameId), 'user_id': ObjectId(userId)}
         bids = cls.load_bids(queryDict)  
         return bids
     

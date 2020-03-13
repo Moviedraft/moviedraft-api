@@ -28,6 +28,10 @@ bids_namespace.model('BidRequest', {
         'userHandle': fields.String
         })
 
+bids_namespace.model('Bids',{
+        'bids': fields.List(fields.Nested(bids_namespace.models['BidRequest']))
+        })
+
 bidPost = bids_namespace.model('BidPost', {
         'gameId': fields.String,
         'movieId': fields.String,
@@ -47,13 +51,18 @@ bids_namespace.model('BidPostResponse', {
 @bids_namespace.route('/<string:gameId>')
 class GameBids(Resource):
     @jwt_required
-    @bids_namespace.response(200, 'Success', bids_namespace.models['BidRequest'])
+    @bids_namespace.response(200, 'Success', bids_namespace.models['Bids'])
     @bids_namespace.response(401, 'Authentication Error')
     @bids_namespace.response(404, 'Not Found')
     @bids_namespace.response(500, 'Internal Server Error')
     def get(self, gameId):
         userIdentity = get_jwt_identity()
         current_user = UserModel.load_user_by_id(userIdentity['id'])
+        
+        userBids = BidModel.load_bids_by_gameId_and_userId(gameId, current_user.id)
+
+        return make_response(jsonify(bids=[bid.serialize() for bid in userBids]), 200)
+        
 
 @bids_namespace.route('/<string:gameId>/<string:movieId>')
 class GameMovieBids(Resource):
@@ -135,6 +144,12 @@ class Bid(Resource):
         if args['bid'] > game.dollarSpendingCap:
             abort(make_response(jsonify(message='Bid must be below game\'s bid cap: ${}'.
                                         format(game.dollarSpendingCap)), 400))
+        
+        currentBids = BidModel.load_bids_by_gameId_and_userId(args['gameId'], current_user.id)
+        totalSpent = sum(bid.bid for bid in currentBids)
+        if totalSpent + args['bid'] > game.dollarSpendingCap:
+            abort(make_response(jsonify(message='You only have ${} left in the auction to spend.'.
+                                        format(game.dollarSpendingCap - totalSpent)), 400))
             
         if highestBid.bid == None or args['bid'] > highestBid.bid:
             highestBid.bid = args['bid']
