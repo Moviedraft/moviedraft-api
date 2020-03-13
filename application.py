@@ -21,6 +21,7 @@ from namespaces.Authentication import logout_namespace
 from namespaces.Games import games_namespace
 from namespaces.Rules import rules_namespace
 from namespaces.Users import users_namespace
+from namespaces.Bids import bids_namespace
 
 sys.path.insert(0, '/models/')
 sys.path.insert(1, '/namespaces/')
@@ -62,6 +63,7 @@ restApi.add_namespace(logout_namespace)
 restApi.add_namespace(games_namespace)
 restApi.add_namespace(rules_namespace)
 restApi.add_namespace(users_namespace)
+restApi.add_namespace(bids_namespace)
 
 @jwt.token_in_blacklist_loader
 def check_if_token_revoked(decoded_token):
