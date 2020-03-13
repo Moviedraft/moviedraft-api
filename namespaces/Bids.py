@@ -148,7 +148,7 @@ class Bid(Resource):
         currentBids = BidModel.load_bids_by_gameId_and_userId(args['gameId'], current_user.id)
         totalSpent = sum(bid.bid for bid in currentBids)
         if totalSpent + args['bid'] > game.dollarSpendingCap:
-            abort(make_response(jsonify(message='You only have ${} left in the auction to spend.'.
+            abort(make_response(jsonify(message='You have ${} left in the auction to spend.'.
                                         format(game.dollarSpendingCap - totalSpent)), 400))
             
         if highestBid.bid == None or args['bid'] > highestBid.bid:
