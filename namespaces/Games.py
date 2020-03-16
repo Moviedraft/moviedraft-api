@@ -45,6 +45,10 @@ games_namespace.model('GamePostResponse', {
         'id': fields.String
         })
 
+gamePatch = games_namespace.model('gamePatch',{
+        'auctionComplete': fields.Boolean
+        })
+
 games_namespace.model('Game', {
         'gameName': fields.String,
         'startDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
@@ -56,7 +60,8 @@ games_namespace.model('Game', {
         'auctionItemsExpireInSeconds': fields.Integer,
         'rules': fields.List(fields.Nested(rules_namespace.models['Rules'])),
         'commissionerId': fields.String,
-        'playerIds': fields.List(fields.String)
+        'playerIds': fields.List(fields.String),
+        'auctionComplete': fields.Boolean
         })
 
 @games_namespace.route('')
@@ -134,7 +139,8 @@ class CreateGames(Resource):
                 auctionItemsExpireInSeconds=args['auctionItemsExpireInSeconds'],
                 rules=rulesArray,
                 commissionerId=current_user.id,
-                playerIds=playerIds
+                playerIds=playerIds,
+                auctionComplete=False
                 )
 
         result = mongo.db.games.insert_one(game.__dict__)
@@ -216,6 +222,30 @@ class Game(Resource):
         abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
     
     @jwt_required
+    @games_namespace.expect(gamePatch)
+    @games_namespace.response(200, 'Success', games_namespace.models['Game'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def patch(self, gameId):
+        parser = reqparse.RequestParser()
+        parser.add_argument('auctionComplete', type=bool, required=False)
+        args = parser.parse_args()
+        
+        existingGame = GameModel.load_game_by_id(gameId)
+        
+        if not existingGame:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+        
+        for key, value in args.items():
+            setattr(existingGame, key, value)
+            
+        updatedGame = existingGame.update_game()
+        
+        return make_response(updatedGame.__dict__, 200)
+
+        
+    @jwt_required
     @games_namespace.expect(gamePayload)
     @games_namespace.response(200, 'Success', games_namespace.models['Game'])
     @games_namespace.response(401, 'Authentication Error')
@@ -234,6 +264,7 @@ class Game(Resource):
         parser.add_argument('movies', type=list, location='json', required=True)
         parser.add_argument('auctionItemsExpireInSeconds', type=int, required=True)
         parser.add_argument('rules', type=list, location='json', required=True)
+        parser.add_argument('auctionComplete', type=bool, required=True)
         args = parser.parse_args()
         
         userIdentity = get_jwt_identity()
