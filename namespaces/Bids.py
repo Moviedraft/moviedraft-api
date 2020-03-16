@@ -55,12 +55,9 @@ class GameBids(Resource):
     @bids_namespace.response(401, 'Authentication Error')
     @bids_namespace.response(500, 'Internal Server Error')
     def get(self, gameId):
-        userIdentity = get_jwt_identity()
-        current_user = UserModel.load_user_by_id(userIdentity['id'])
-        
-        userBids = BidModel.load_bids_by_gameId_and_userId(gameId, current_user.id)
+        bids = BidModel.load_bids_by_gameId(gameId)
 
-        return make_response(jsonify(bids=[bid.serialize() for bid in userBids]), 200)
+        return make_response(jsonify(bids=[bid.serialize() for bid in bids]), 200)
         
 
 @bids_namespace.route('/<string:gameId>/<string:movieId>')
