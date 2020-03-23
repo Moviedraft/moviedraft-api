@@ -179,28 +179,26 @@ class Game(Resource):
     @games_namespace.response(500, 'Internal Server Error')
     def get(self, gameId):
         game = GameModel.load_game_by_id(gameId)
-    
-        if game:
-            movies = []
-            for movieId in game.movies:
-                movieModel = MovieModel.load_movie_by_id(movieId)
-                movies.append(movieModel.__dict__)          
-                game.movies = movies
+        
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+
+        movies = []
+        for movieId in game.movies:
+            movieModel = MovieModel.load_movie_by_id(movieId)
+            movies.append(movieModel.__dict__)          
+            game.movies = movies
+
+        playerIds = []
+        for id in game.playerIds:
+            if ObjectId.is_valid(id):
+                player = mongo.db.users.find_one({'_id': ObjectId(id)}, {'_id':1})
+                if player:
+                    playerIds.append(str(player['_id']))
+        
+        game.playerIds = playerIds
             
-            commissionerId = game.commissionerId
-            game.commissionerId = str(commissionerId)
-            
-            playerIds = []
-            for id in game.playerIds:
-                if ObjectId.is_valid(id):
-                    player = mongo.db.users.find_one({'_id': ObjectId(id)}, {'_id':1})
-                    if player:
-                        playerIds.append(str(player['_id']))
-            game.playerIds = playerIds
-            
-            return make_response(jsonify(game.__dict__), 200)
-    
-        abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+        return make_response(jsonify(game.__dict__), 200)
 
     @jwt_required
     @requires_admin
