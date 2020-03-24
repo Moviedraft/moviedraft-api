@@ -32,8 +32,8 @@ class MovieModel():
     def load_movies_by_ids(cls, ids):
         validIds = [id for id in ids if ObjectId.is_valid(id)]
         queryDict = {'_id': {'$in': [ObjectId(id) for id in validIds]}}
-        movie = cls.load_movies(queryDict)  
-        return movie
+        movies = cls.load_movies(queryDict)  
+        return movies
     
     @classmethod
     def load_movie(cls, queryDict):
