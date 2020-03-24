@@ -21,6 +21,7 @@ from models.MovieModel import MovieModel
 from models.BidModel import BidModel
 from models.UserModel import UserModel
 from models.UserGameModel import UserGameModel
+from models.PlayerModel import PlayerModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
 from decorators.RoleAccessDecorator import requires_admin
@@ -62,6 +63,19 @@ games_namespace.model('Game', {
         'commissionerId': fields.String,
         'playerIds': fields.List(fields.String),
         'auctionComplete': fields.Boolean
+        })
+
+games_namespace.model('Player', {
+        'id': fields.String,
+        'userHandle': fields.String,
+        'totalSpent': fields.Integer,
+        'totalGross': fields.Integer,
+        'moviesPurchasedTitles': fields.List(fields.String)
+        })
+
+
+games_namespace.model('Players', {
+        'players': fields.Nested(games_namespace.models['Player'])
         })
 
 @games_namespace.route('')
@@ -345,7 +359,7 @@ class Game(Resource):
         
         moviesToAdd = set(movieIds).difference(set(existingGame.movies))
         for movieId in moviesToAdd:
-            BidModel.create_empty_bid(gameId, movieId, existingGame.auctionDate)
+            BidModel.create_empty_bid(gameId, movieId, existingGame.auctionDate, args['dollarSpendingCap'])
 
         for key, value in args.items():
             setattr(existingGame, key, value)
@@ -378,6 +392,35 @@ class Game(Resource):
         
         return make_response(updatedGame.__dict__, 200)
 
+@games_namespace.route('/<string:gameId>/players')
+class GamePlayerRankings(Resource):
+    @jwt_required
+    @games_namespace.response(200, 'Success', games_namespace.models['Players'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def get(self, gameId):
+        game = GameModel.load_game_by_id(gameId)
+        
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+        
+        gameBids = BidModel.load_bids_by_gameId(gameId)
+        
+        if not gameBids:
+            abort(make_response(jsonify(message='Bids for Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+            
+        players = []
+        
+        commissioner = PlayerModel.loadPlayer(game.commissionerId, gameBids)
+        players.append(commissioner)
+        
+        for id in game.playerIds:
+            player = PlayerModel.loadPlayer(id, gameBids)
+            players.append(player)
+            
+        return make_response(jsonify(players=[player.serialize() for player in players]), 200)
+        
 @games_namespace.route('/<string:gameId>/join')
 class JoinGame(Resource):
     @jwt_required
