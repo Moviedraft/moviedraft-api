@@ -417,7 +417,9 @@ class GamePlayerRankings(Resource):
         
         for id in game.playerIds:
             player = PlayerModel.loadPlayer(id, gameBids)
-            players.append(player)
+            playerJoined = UserGameModel.load_user_game_by_game_id_and_user_id(game._id, player.id).joined
+            if playerJoined:
+                players.append(player)
             
         return make_response(jsonify(players=[player.serialize() for player in players]), 200)
         
@@ -447,12 +449,7 @@ class JoinGame(Resource):
         if current_user.id not in game.playerIds:
             abort(make_response(jsonify(message='User ID: \'{}\' has not been added to game ID: \'{}\'.'
                                         .format(current_user.id, gameId)), 403))
-            
-        game.playerIds.append(current_user.id)
-        if not game.update_game():
-            abort(make_response(jsonify(message='User ID: \'{}\' could not be associated with game ID: \'{}\'.'
-                                        .format(current_user.id, gameId)), 500))
-        
+
         userGame.joined = True
         if not userGame.update_userGameModel():
             abort(make_response(jsonify(message='User-Game association could not be created ' + 
