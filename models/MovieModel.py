@@ -29,6 +29,13 @@ class MovieModel():
         return movie
     
     @classmethod
+    def load_movies_by_ids(cls, ids):
+        validIds = [id for id in ids if ObjectId.is_valid(id)]
+        queryDict = {'_id': {'$in': [ObjectId(id) for id in validIds]}}
+        movies = cls.load_movies(queryDict)  
+        return movies
+    
+    @classmethod
     def load_movie(cls, queryDict):
         movie = mongo.db.movies.find_one(queryDict)
         if not movie:
@@ -44,3 +51,24 @@ class MovieModel():
                 lastUpdated=string_format_date(movie['lastUpdated']),
                 posterUrl=posterUrl
                 )
+    
+    @classmethod
+    def load_movies(cls, queryDict):
+        movies = mongo.db.movies.find(queryDict)
+        
+        movieModels = []
+        for movie in movies:
+            posterUrl = '' if 'posterUrl' not in movie else movie['posterUrl']
+            movieModel = MovieModel(
+                id=movie['_id'],
+                releaseDate=string_format_date(movie['releaseDate']),
+                title=movie['title'],
+                releaseType=movie['releaseType'],
+                distributor=movie['distributor'],
+                domesticGross=movie['domesticGross'],
+                lastUpdated=string_format_date(movie['lastUpdated']),
+                posterUrl=posterUrl
+                )
+            movieModels.append(movieModel)
+            
+        return movieModels
