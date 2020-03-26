@@ -70,7 +70,8 @@ games_namespace.model('Player', {
         'userHandle': fields.String,
         'totalSpent': fields.Integer,
         'totalGross': fields.Integer,
-        'moviesPurchasedTitles': fields.List(fields.String)
+        'moviesPurchasedTitles': fields.List(fields.String),
+        'value': fields.Integer
         })
 
 
