@@ -29,12 +29,18 @@ class MovieModel():
         return movie
     
     @classmethod
+    def load_movie_by_title(cls, title):
+        queryDict = {'title': title}
+        movie = cls.load_movie(queryDict)  
+        return movie
+    
+    @classmethod
     def load_movies_by_ids(cls, ids):
         validIds = [id for id in ids if ObjectId.is_valid(id)]
         queryDict = {'_id': {'$in': [ObjectId(id) for id in validIds]}}
         movies = cls.load_movies(queryDict)  
         return movies
-    
+
     @classmethod
     def load_movie(cls, queryDict):
         movie = mongo.db.movies.find_one(queryDict)

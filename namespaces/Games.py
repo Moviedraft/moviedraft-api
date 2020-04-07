@@ -22,6 +22,7 @@ from models.BidModel import BidModel
 from models.UserModel import UserModel
 from models.UserGameModel import UserGameModel
 from models.PlayerModel import PlayerModel
+from models.WeekendBoxOfficeModel import WeekendBoxOfficeModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
 from decorators.RoleAccessDecorator import requires_admin
@@ -76,7 +77,21 @@ games_namespace.model('Player', {
 
 
 games_namespace.model('Players', {
-        'players': fields.Nested(games_namespace.models['Player'])
+        'players': fields.List(fields.Nested(games_namespace.models['Player']))
+        })
+
+games_namespace.model('WeekendBoxOfficeMovie', {
+        'id': fields.String,
+        'title': fields.String,
+        'weekendGross': fields.Integer,
+        'totalGross': fields.Integer,
+        'owner': fields.String,
+        'purchasePrice': fields.Integer,
+        'note': fields.String
+        })
+
+games_namespace.model('WeekendBoxOffice', {
+        'weekendBoxOffice': fields.List(fields.Nested(games_namespace.models['WeekendBoxOfficeMovie']))
         })
 
 @games_namespace.route('')
@@ -423,7 +438,24 @@ class GamePlayerRankings(Resource):
                 players.append(player)
             
         return make_response(jsonify(players=[player.serialize() for player in players]), 200)
+
+@games_namespace.route('/<string:gameId>/weekend')
+class WeekendBoxOffice(Resource):
+    @jwt_required
+    @games_namespace.response(200, 'Success', games_namespace.models['WeekendBoxOffice'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def get(self, gameId):
+        game = GameModel.load_game_by_id(gameId)
         
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+        
+        weekendBoxOffice = WeekendBoxOfficeModel.load_weekend_box_office(gameId)
+        
+        return make_response(jsonify(weekendBoxOffice=[movie.serialize() for movie in weekendBoxOffice]), 200)
+    
 @games_namespace.route('/<string:gameId>/join')
 class JoinGame(Resource):
     @jwt_required
