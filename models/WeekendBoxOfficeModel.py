@@ -12,13 +12,14 @@ from models.BidModel import BidModel
 import arrow
 
 class WeekendBoxOfficeModel():
-    def __init__(self, id, title, weekendGross, totalGross, owner, purchasePrice):
+    def __init__(self, id, title, weekendGross, totalGross, owner, purchasePrice, openingWeekend):
         self.id = id
         self.title = title
         self.weekendGross = weekendGross
         self.totalGross = totalGross
         self.owner = owner
         self.purchasePrice = purchasePrice
+        self.openingWeekend = openingWeekend
     
     def serialize(self): 
         return {           
@@ -27,7 +28,8 @@ class WeekendBoxOfficeModel():
         'weekendGross': self.weekendGross,
         'totalGross': self.totalGross,
         'owner': self.owner,
-        'purchasePrice': self.purchasePrice
+        'purchasePrice': self.purchasePrice,
+        'openingWeekend': self.openingWeekend
         }
         
     @classmethod
@@ -36,7 +38,7 @@ class WeekendBoxOfficeModel():
         
         weekendEndingFilterCondition = { '$lte': convert_to_utc(arrow.get(weekendEnding).shift(days=2)),
                                       '$gte': convert_to_utc(weekendEnding) }
-        
+
         weekendMovies = mongo.db.weekendboxoffice.find({'$query': {'weekendEnding': weekendEndingFilterCondition}, '$orderby': {'weekendGross': -1}})
         if not weekendMovies:
             return None
@@ -63,7 +65,8 @@ class WeekendBoxOfficeModel():
                     weekendGross=movie['weekendGross'],
                     totalGross=movie['totalGross'],
                     owner=owner,
-                    purchasePrice=purchasePrice
+                    purchasePrice=purchasePrice,
+                    openingWeekend=movie['openingWeekend']
                     )
             weekend.append(weekendBoxOfficeModel)
         return weekend
