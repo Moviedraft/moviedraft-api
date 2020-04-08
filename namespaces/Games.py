@@ -86,8 +86,7 @@ games_namespace.model('WeekendBoxOfficeMovie', {
         'weekendGross': fields.Integer,
         'totalGross': fields.Integer,
         'owner': fields.String,
-        'purchasePrice': fields.Integer,
-        'note': fields.String
+        'purchasePrice': fields.Integer
         })
 
 games_namespace.model('WeekendBoxOffice', {
