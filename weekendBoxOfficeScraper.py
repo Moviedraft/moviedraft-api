@@ -6,10 +6,11 @@ Created on Thu Mar 26 14:52:04 2020
 """
 
 class WeekendBoxOffice:
-    def __init__(self, title, weekendGross, totalGross):
+    def __init__(self, title, weekendGross, totalGross, openingWeekend):
         self.title = title
         self.weekendGross = weekendGross
         self.totalGross = totalGross
+        self.openingWeekend = openingWeekend
         self.weekendEnding = datetime.strptime(datetime.utcnow().isoformat() , '%Y-%m-%dT%H:%M:%S.%f') 
         
 from selenium import webdriver
@@ -59,8 +60,10 @@ for row in weekendGrossTable.find_elements_by_xpath('.//tr')[:11]:
     
     totalGross = tds[9].text
     formattedtotalGross = ''.join(character for character in totalGross if character.isnumeric())
+    
+    openingWeekend = tds[1].text == 'N'
 
-    weekendBoxOffice = WeekendBoxOffice(movieTitle, int(formattedWeekendGross), int(formattedtotalGross))
+    weekendBoxOffice = WeekendBoxOffice(movieTitle, int(formattedWeekendGross), int(formattedtotalGross), openingWeekend)
     
     db.weekendboxoffice.insert_one(weekendBoxOffice.__dict__)
     print('{} inserted into database'.format(weekendBoxOffice.title))
