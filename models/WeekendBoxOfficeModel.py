@@ -12,15 +12,13 @@ from models.BidModel import BidModel
 import arrow
 
 class WeekendBoxOfficeModel():
-    def __init__(self, id, title, weekendGross, totalGross, owner, 
-                 purchasePrice, note):
+    def __init__(self, id, title, weekendGross, totalGross, owner, purchasePrice):
         self.id = id
         self.title = title
         self.weekendGross = weekendGross
         self.totalGross = totalGross
         self.owner = owner
         self.purchasePrice = purchasePrice
-        self.note = note
     
     def serialize(self): 
         return {           
@@ -29,8 +27,7 @@ class WeekendBoxOfficeModel():
         'weekendGross': self.weekendGross,
         'totalGross': self.totalGross,
         'owner': self.owner,
-        'purchasePrice': self.purchasePrice,
-        'note': self.note
+        'purchasePrice': self.purchasePrice
         }
         
     @classmethod
@@ -52,10 +49,8 @@ class WeekendBoxOfficeModel():
                 highBid = None
             else:
                 highBid = BidModel.load_bid_by_gameId_and_movieId(gameId, dbMovie.id)
-            
-            note = None
+
             if not highBid or not highBid.user_id:
-                note = 'Not in Game'
                 owner = None
                 purchasePrice = None
             else:
@@ -68,8 +63,7 @@ class WeekendBoxOfficeModel():
                     weekendGross=movie['weekendGross'],
                     totalGross=movie['totalGross'],
                     owner=owner,
-                    purchasePrice=purchasePrice,
-                    note=note
+                    purchasePrice=purchasePrice
                     )
             weekend.append(weekendBoxOfficeModel)
         return weekend
