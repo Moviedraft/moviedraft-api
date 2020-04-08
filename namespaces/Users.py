@@ -5,10 +5,11 @@ Created on Thu Jan 23 00:14:05 2020
 @author: Jason
 """
 
-from flask import make_response
+from flask import make_response, abort, jsonify
 from flask_restplus import Namespace, Resource, fields, reqparse
 from flask_jwt_extended import get_jwt_identity,jwt_required
 from models.UserModel import UserModel
+from models.BidModel import BidModel
 
 users_namespace = Namespace('users', description='User information.')
 
@@ -61,6 +62,14 @@ class Users(Resource):
             setattr(currentUser, key, value or getattr(currentUser, key))
             
         updatedUser = currentUser.update_user()
+        
+        currentBids = BidModel.load_bids_by_userId(updatedUser.id)
+        for bid in currentBids:
+            bid.userHandle = updatedUser.userHandle
+            updatedBid = bid.update_bid()
+            if not updatedBid:
+                abort(make_response(jsonify('bid ID: \'{}\' could not be updated.'
+                                            .format(bid.id)), 500))
         
         return make_response(updatedUser.__dict__, 200)
         

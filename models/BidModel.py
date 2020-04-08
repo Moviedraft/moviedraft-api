@@ -94,6 +94,14 @@ class BidModel():
         return bids
     
     @classmethod
+    def load_bids_by_userId(cls, userId):
+        if not ObjectId.is_valid(userId):
+            return None
+        queryDict = {'user_id': ObjectId(userId)}
+        bids = cls.load_bids(queryDict)  
+        return bids
+    
+    @classmethod
     def load_bids_by_gameId_and_userId(cls, gameId, userId):
         if not ObjectId.is_valid(gameId) or not ObjectId.is_valid(userId):
             return None
