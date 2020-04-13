@@ -16,7 +16,6 @@ class WeekendBoxOffice:
 from selenium import webdriver
 from pymongo import MongoClient
 from datetime import datetime
-from bson.objectid import ObjectId
 import sys
 
 client = MongoClient(sys.argv[1])
