@@ -38,6 +38,11 @@ weekendGrossTable = driver.find_element_by_id('box_office_weekend_table')
 
 movieArray = []
 
+previousWeekendNewReleases = db.weekendboxoffice.find({'openingWeekend': True})
+for previous in previousWeekendNewReleases:
+    db.weekendboxoffice.update_one({'_id': previous['_id']}, {'$set': {'openingWeekend': False}})
+    print('Updated \'{}\' openingWeekend flag to FALSE.'.format(previous['title']))
+
 for row in weekendGrossTable.find_elements_by_xpath('.//tr')[:11]:
     tds = row.find_elements_by_xpath('.//td')
     
