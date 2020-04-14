@@ -488,6 +488,9 @@ class Poll(Resource):
         
         poll = PollModel.load_poll_by_gameId(gameId)
         
+        if not poll:
+            abort(make_response(jsonify(message='Poll could not be found for game ID: \'{}\'.'.format(gameId)), 404))
+        
         return make_response(jsonify(poll.serialize()), 200)
 
     @jwt_required
