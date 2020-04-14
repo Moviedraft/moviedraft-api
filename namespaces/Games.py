@@ -23,6 +23,7 @@ from models.UserModel import UserModel
 from models.UserGameModel import UserGameModel
 from models.PlayerModel import PlayerModel
 from models.WeekendBoxOfficeModel import WeekendBoxOfficeModel
+from models.PollModel import PollModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
 from decorators.RoleAccessDecorator import requires_admin
@@ -41,6 +42,10 @@ gamePayload = games_namespace.model('GamePayload', {
         'movies': fields.List(fields.String),
         'auctionItemsExpireInSeconds': fields.Integer,
         'rules': fields.Nested(rules_namespace.models['Rules'])
+        })
+
+pollPayload = games_namespace.model('PollPayload', {
+        'vote': fields.String
         })
 
 games_namespace.model('GamePostResponse', {
@@ -92,6 +97,18 @@ games_namespace.model('WeekendBoxOfficeMovie', {
 
 games_namespace.model('WeekendBoxOffice', {
         'weekendBoxOffice': fields.List(fields.Nested(games_namespace.models['WeekendBoxOfficeMovie']))
+        })
+
+games_namespace.model('PollChoice', {
+        'displayText': fields.String,
+        'votes': fields.Integer
+        })
+
+games_namespace.model('Poll', {
+        'id': fields.String,
+        'gameId': fields.String,
+        'question': fields.String,
+        'choices': fields.List(fields.Nested(games_namespace.models['PollChoice']))
         })
 
 @games_namespace.route('')
@@ -455,6 +472,61 @@ class WeekendBoxOffice(Resource):
         weekendBoxOffice = WeekendBoxOfficeModel.load_weekend_box_office(gameId)
         
         return make_response(jsonify(weekendBoxOffice=[movie.serialize() for movie in weekendBoxOffice]), 200)
+
+@games_namespace.route('/<string:gameId>/poll')
+class Poll(Resource):
+    @jwt_required
+    @games_namespace.response(200, 'Success', games_namespace.models['Poll'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def get(self, gameId):
+        game = GameModel.load_game_by_id(gameId)
+        
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+        
+        poll = PollModel.load_poll_by_gameId(gameId)
+        
+        if not poll:
+            abort(make_response(jsonify(message='Poll could not be found for game ID: \'{}\'.'.format(gameId)), 404))
+        
+        return make_response(jsonify(poll.serialize()), 200)
+
+    @jwt_required
+    @games_namespace.expect(pollPayload)
+    @games_namespace.response(200, 'Success', games_namespace.models['Poll'])
+    @games_namespace.response(400, 'Bad Request')
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def post(self, gameId):
+        parser = reqparse.RequestParser()
+        parser.add_argument('vote', required=False)
+        args = parser.parse_args()
+        
+        game = GameModel.load_game_by_id(gameId)
+        
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+        
+        poll = PollModel.load_poll_by_gameId(gameId)
+        updatedPoll = None
+        
+        if not poll:
+            abort(make_response(jsonify(message='Poll could not be found for game ID: \'{}\'.'.format(gameId)), 404))
+        
+        if args['vote']:
+            choiceToUpdate = next((x for x in poll.choices if x.displayText == args['vote']), None)
+        
+            if not choiceToUpdate:
+                abort(make_response(jsonify(message='Poll choice: \'{}\' is not valid.'.format(args['vote'])), 400))
+            
+            updatedPoll = poll.update_vote(choiceToUpdate.displayText, choiceToUpdate.votes + 1)
+        
+        responsePoll = updatedPoll or poll
+        
+        return make_response(jsonify(responsePoll.serialize()), 200)
     
 @games_namespace.route('/<string:gameId>/join')
 class JoinGame(Resource):
