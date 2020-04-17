@@ -192,14 +192,14 @@ class CreateGames(Resource):
 
         result = mongo.db.games.insert_one(game.__dict__)
         
-        commissioneruUserGame = UserGameModel.create_userGameModel(gameId, current_user.id, game.gameName, True)
+        commissioneruUserGame = UserGameModel.create_userGameModel(current_user.id, gameId, current_user.id, game.gameName, True)
         if not commissioneruUserGame:
             abort(make_response(jsonify(message='Unable to associate commissionerId \'{}\' with game: \'{}\'.'
                                                 .format(current_user.id, game.gameName)), 500))
         
         for playerId in playerIds:
             if ObjectId.is_valid(playerId):
-                userGame = UserGameModel.create_userGameModel(gameId, playerId, args['gameName'])
+                userGame = UserGameModel.create_userGameModel(current_user.id, gameId, playerId, args['gameName'])
                 if not userGame:
                     abort(make_response(jsonify(message='Unable to associate userId \'{}\' with game: \'{}\'.'
                                                 .format(playerId, game.gameName)), 500))
@@ -374,7 +374,7 @@ class Game(Resource):
         
         playersToAdd = set(playerIds).difference(set(existingGame.playerIds))
         for playerId in playersToAdd:
-            UserGameModel.create_userGameModel(gameId, playerId, existingGame.gameName)
+            UserGameModel.create_userGameModel(current_user.id, gameId, playerId, existingGame.gameName)
             
         args['playerIds'] = playerIds
         print(playerIds)

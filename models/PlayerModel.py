@@ -41,7 +41,7 @@ class PlayerModel():
         totalGross = sum(movie.domesticGross for movie in moviesPurchased)
         movieTitles = [movie.title for movie in moviesPurchased]
         
-        value = round(totalGross / totalSpent)
+        value = round(totalGross / totalSpent) if totalSpent else 0
 
         return PlayerModel(
                 id=playerId,

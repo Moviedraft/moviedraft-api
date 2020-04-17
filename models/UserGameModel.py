@@ -9,8 +9,9 @@ from utilities.Database import mongo
 from bson.objectid import ObjectId
 
 class UserGameModel():
-    def __init__(self, id, game_id, user_id, gameName, joined):
+    def __init__(self, id, commissioner_id, game_id, user_id, gameName, joined):
         self._id = id
+        self.commissioner_id = commissioner_id
         self.game_id = game_id
         self.user_id = user_id
         self.gameName = gameName
@@ -19,6 +20,7 @@ class UserGameModel():
     def serialize(self): 
         return {           
         'id': self._id,
+        'commissioner_id': self.commissioner_id,
         'game_id': self.game_id,
         'user_id': self.user_id,
         'gameName': self.gameName,
@@ -27,7 +29,9 @@ class UserGameModel():
     
     def update_userGameModel(self):
         result = mongo.db.usergames.update_one({'_id': ObjectId(self._id)}, 
-                                            { '$set': {'game_id': ObjectId(self.game_id),
+                                            { '$set': {
+                                             'commissioner_id': ObjectId(self.commissioner_id),
+                                             'game_id': ObjectId(self.game_id),
                                              'user_id': ObjectId(self.user_id),
                                              'gameName': self.gameName,
                                              'joined': self.joined
@@ -38,11 +42,12 @@ class UserGameModel():
         return None
     
     @classmethod
-    def create_userGameModel(cls, game_id, user_id, gameName, joined = False):
-        if not ObjectId.is_valid(game_id) or not ObjectId.is_valid(user_id):
+    def create_userGameModel(cls, commissioner_id, game_id, user_id, gameName, joined = False):
+        if not ObjectId.is_valid(commissioner_id) or not ObjectId.is_valid(game_id) or not ObjectId.is_valid(user_id):
             return None
         
         userGameModel=UserGameModel(id=ObjectId(),
+                                    commissioner_id=ObjectId(commissioner_id),
                                     game_id=ObjectId(game_id),
                                     user_id=ObjectId(user_id),
                                     gameName=gameName,
@@ -92,7 +97,8 @@ class UserGameModel():
         userGame = mongo.db.usergames.find_one(queryDict)
         if not userGame:
             return None
-        return UserGameModel(id=str(userGame['_id']), 
+        return UserGameModel(id=str(userGame['_id']),
+                             commissioner_id=str(userGame['commissioner_id']),
                              game_id=str(userGame['game_id']), 
                              user_id=str(userGame['user_id']), 
                              gameName=userGame['gameName'],
@@ -104,7 +110,8 @@ class UserGameModel():
         games = mongo.db.usergames.find(queryDict)
         userGames = []
         for game in games:
-            userGame = UserGameModel(id=str(game['_id']), 
+            userGame = UserGameModel(id=str(game['_id']),
+                                     commissioner_id=str(game['commissioner_id']),
                                      game_id=str(game['game_id']), 
                                      user_id=str(game['user_id']), 
                                      gameName=game['gameName'],
