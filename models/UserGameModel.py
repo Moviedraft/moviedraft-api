@@ -43,13 +43,15 @@ class UserGameModel():
     
     @classmethod
     def create_userGameModel(cls, commissioner_id, game_id, user_id, gameName, joined = False):
-        if not ObjectId.is_valid(commissioner_id) or not ObjectId.is_valid(game_id) or not ObjectId.is_valid(user_id):
+        if not ObjectId.is_valid(commissioner_id) or not ObjectId.is_valid(game_id):
             return None
+        
+        userId = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
         
         userGameModel=UserGameModel(id=ObjectId(),
                                     commissioner_id=ObjectId(commissioner_id),
                                     game_id=ObjectId(game_id),
-                                    user_id=ObjectId(user_id),
+                                    user_id=userId,
                                     gameName=gameName,
                                     joined=joined)
         result = mongo.db.usergames.insert_one(userGameModel.__dict__)
@@ -70,9 +72,10 @@ class UserGameModel():
     
     @classmethod
     def load_user_game_by_game_id_and_user_id(cls, game_id, user_id):
-        if not ObjectId.is_valid(game_id) or not ObjectId.is_valid(user_id):
+        if not ObjectId.is_valid(game_id):
             return None
-        queryDict = {'game_id': ObjectId(game_id), 'user_id': ObjectId(user_id)}
+        userId = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
+        queryDict = {'game_id': ObjectId(game_id), 'user_id': userId}
         userGame = cls.load_user_game(queryDict)
         return userGame
     
@@ -86,9 +89,8 @@ class UserGameModel():
     
     @classmethod
     def load_user_games_by_user_id(cls, user_id):
-        if not ObjectId.is_valid(user_id):
-            return None
-        queryDict = {'user_id': ObjectId(user_id)}
+        userId = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
+        queryDict = {'user_id': userId}
         userGames = cls.load_user_games(queryDict)
         return userGames
         
