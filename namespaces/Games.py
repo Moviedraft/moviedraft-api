@@ -198,11 +198,10 @@ class CreateGames(Resource):
                                                 .format(current_user.id, game.gameName)), 500))
         
         for playerId in playerIds:
-            if ObjectId.is_valid(playerId):
-                userGame = UserGameModel.create_userGameModel(current_user.id, gameId, playerId, args['gameName'])
-                if not userGame:
-                    abort(make_response(jsonify(message='Unable to associate userId \'{}\' with game: \'{}\'.'
-                                                .format(playerId, game.gameName)), 500))
+            userGame = UserGameModel.create_userGameModel(current_user.id, gameId, playerId, args['gameName'])
+            if not userGame:
+                abort(make_response(jsonify(message='Unable to associate userId \'{}\' with game: \'{}\'.'
+                                            .format(playerId, game.gameName)), 500))
                     
         for email in filteredPlayers:
             executor.submit(Emailer.send_email, 

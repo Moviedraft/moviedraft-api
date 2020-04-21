@@ -126,11 +126,16 @@ class loginValidate(Resource):
                     abort(make_response(jsonify(message='Could not add user ID: \'{}\' ' +
                                                 'to game ID: \'{}\''
                                                 .format(storedUser.id, game._id)), 500))
-                if not UserGameModel.create_userGameModel(game._id, storedUser.id, game.gameName):
-                    abort(make_response(jsonify(message='Could not associate user ID: \'{}\' ' +
+                    
+                userGames = UserGameModel.load_user_games_by_user_id(storedUser.email)
+                for userGame in userGames:
+                    userGame.user_id = storedUser.id
+                    updatedUserGame = userGame.update_userGameModel()
+                    if not updatedUserGame:
+                        abort(make_response(jsonify(message='Could not associate user ID: \'{}\' ' +
                                                 'with invited game ID: \'{}\''
                                                 .format(storedUser.id, game._id)), 500))
-        
+                        
         storedUser.lastLoggedIn = datetime.utcnow()
         
         updatedUser = storedUser.update_user()
