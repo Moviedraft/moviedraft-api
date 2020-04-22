@@ -90,7 +90,7 @@ class GameMovieBids(Resource):
         if (str(game.commissionerId) == current_user.id 
             and arrow.utcnow() > arrow.get(game.auctionDate) 
             and bidItem.auctionExpirySet == False):
-                bidItem.auctionExpiry = datetime.utcnow() + timedelta(seconds=game.auctionItemsExpireInSeconds)
+                bidItem.auctionExpiry = convert_to_utc(arrow.utcnow().shift(seconds=+game.auctionItemsExpireInSeconds))
                 bidItem.auctionExpirySet = True
                 bidItem = bidItem.update_bid()
         
