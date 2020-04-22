@@ -12,7 +12,7 @@ from utilities.DatetimeHelper import convert_to_utc, string_format_date
 class GameModel():
     def __init__(self, id, gameName, gameNameLowerCase, startDate, endDate, auctionDate,
                  playerBuyIn, dollarSpendingCap, movies, auctionItemsExpireInSeconds, 
-                 rules, commissionerId, playerIds, auctionComplete):
+                 rules, commissionerId, playerIds, auctionComplete, auctionTimeIncrement = 7):
         self._id = id
         self.gameName = gameName
         self.gameNameLowerCase = gameNameLowerCase
@@ -27,6 +27,7 @@ class GameModel():
         self.commissionerId = commissionerId
         self.playerIds = playerIds
         self.auctionComplete = auctionComplete
+        self.auctionTimeIncrement = auctionTimeIncrement
     
     def update_game(self):
         mongo.db.games.replace_one({'_id': ObjectId(self._id)}, 
@@ -42,7 +43,8 @@ class GameModel():
                                     'rules': self.rules,
                                     'commissionerId': self.commissionerId,
                                     'playerIds': self.playerIds,
-                                    'auctionComplete': self.auctionComplete
+                                    'auctionComplete': self.auctionComplete,
+                                    'auctionTimeIncrement': self.auctionTimeIncrement
                                     })
         updatedGame = GameModel.load_game_by_name(self.gameName)
         return updatedGame
@@ -86,7 +88,8 @@ class GameModel():
                 rules=game['rules'],
                 commissionerId=game['commissionerId'],
                 playerIds=game['playerIds'],
-                auctionComplete=game['auctionComplete']
+                auctionComplete=game['auctionComplete'],
+                auctionTimeIncrement=game['auctionTimeIncrement']
                 )
     
     @classmethod
@@ -109,7 +112,8 @@ class GameModel():
                     rules=game['rules'],
                     commissionerId=game['commissionerId'],
                     playerIds=game['playerIds'],
-                    auctionComplete=game['auctionComplete']
+                    auctionComplete=game['auctionComplete'],
+                    auctionTimeIncrement=game['auctionTimeIncrement']
                     )
             games.append(gameModel)
         

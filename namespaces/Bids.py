@@ -14,6 +14,7 @@ from models.MovieModel import MovieModel
 from models.BidModel import BidModel
 from models.GameModel import GameModel
 from models.UserModel import UserModel
+from utilities.DatetimeHelper import convert_to_utc
 import arrow
 
 bids_namespace = Namespace('bids', description='Retrieve auction bid data.')
@@ -152,6 +153,7 @@ class Bid(Resource):
             highestBid.bid = args['bid']
             highestBid.user_id = ObjectId(current_user.id)
             highestBid.userHandle = current_user.userHandle
+            highestBid.auctionExpiry = convert_to_utc(arrow.get(highestBid.auctionExpiry).shift(seconds=+game.auctionTimeIncrement))
             updatedRecord = highestBid.update_bid()
             return make_response(updatedRecord.__dict__, 200)
         else:
