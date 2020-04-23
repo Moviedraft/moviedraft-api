@@ -5,7 +5,7 @@ Created on Fri Mar 13 13:16:53 2020
 @author: Jason
 """
 
-from flask import make_response, jsonify, abort, Response, stream_with_context
+from flask import make_response, jsonify, abort, Response
 from flask_restplus import Namespace, Resource, fields, reqparse
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from bson.objectid import ObjectId
