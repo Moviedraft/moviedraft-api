@@ -5,10 +5,9 @@ Created on Fri Mar 13 13:16:53 2020
 @author: Jason
 """
 
-from flask import make_response, jsonify, abort
+from flask import make_response, jsonify, abort, Response
 from flask_restplus import Namespace, Resource, fields, reqparse
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime, timedelta
 from bson.objectid import ObjectId
 from models.MovieModel import MovieModel
 from models.BidModel import BidModel
@@ -16,6 +15,8 @@ from models.GameModel import GameModel
 from models.UserModel import UserModel
 from utilities.DatetimeHelper import convert_to_utc
 import arrow
+import json
+import time
 
 bids_namespace = Namespace('bids', description='Retrieve auction bid data.')
 
@@ -95,7 +96,21 @@ class GameMovieBids(Resource):
                 bidItem = bidItem.update_bid()
         
         return make_response(bidItem.__dict__, 200)
-    
+
+@bids_namespace.route('/<string:gameId>/<string:movieId>/stream')
+class BidEventStream(Resource):
+    @bids_namespace.response(200, 'Success')
+    @bids_namespace.response(404, 'Not Found')
+    @bids_namespace.response(500, 'Internal Server Error')
+    def get(self, gameId, movieId):
+        def eventStream():
+            while True:
+                bidModel = BidModel.load_bid_by_gameId_and_movieId(gameId, movieId)
+                eventData = json.dumps(bidModel.__dict__)
+                yield 'event: message\ndata: ' + eventData + '\n\n'
+                time.sleep(1)
+        return Response(eventStream(),mimetype='text/event-stream')
+
 @bids_namespace.route('')
 class Bid(Resource):
     @jwt_required
