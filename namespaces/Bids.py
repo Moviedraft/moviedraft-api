@@ -108,7 +108,7 @@ class BidEventStream(Resource):
                 bidModel = BidModel.load_bid_by_gameId_and_movieId(gameId, movieId)
                 eventData = json.dumps(bidModel.__dict__)
                 yield 'retry: 1000\nevent: message\ndata: ' + eventData + '\n\n'
-                time.sleep(1)
+                time.sleep(0.5)
         return Response(eventStream(),mimetype='text/event-stream')
 
 @bids_namespace.route('')
