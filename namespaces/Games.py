@@ -237,10 +237,9 @@ class Game(Resource):
 
         playerIds = []
         for id in game.playerIds:
-            if ObjectId.is_valid(id):
-                player = mongo.db.users.find_one({'_id': ObjectId(id)}, {'_id':1})
-                if player:
-                    playerIds.append(str(player['_id']))
+            player = UserModel.load_user_by_id(id)
+            if player:
+                playerIds.append(player.email)
         
         game.playerIds = playerIds
             
