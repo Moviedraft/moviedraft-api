@@ -13,6 +13,7 @@ from models.MovieModel import MovieModel
 from models.BidModel import BidModel
 from models.GameModel import GameModel
 from models.UserModel import UserModel
+from models.UserGameModel import UserGameModel
 from utilities.DatetimeHelper import convert_to_utc
 import arrow
 
@@ -119,6 +120,11 @@ class Bid(Resource):
         if not game:
             abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.
                                         format(args['gameId'])), 404))
+        
+        userGame = UserGameModel.load_user_game_by_game_id_and_user_id(game._id, current_user.id)
+        if not userGame or not userGame.joined:
+            abort(make_response(jsonify(message='User ID: \'{}\' is not playing this game and can not make a bid.'.
+                                        format(args['gameId'])), 403))
 
         if not MovieModel.load_movie_by_id(args['movieId']):
             abort(make_response(jsonify(message='Movie ID: \'{}\' could not be found.'.
