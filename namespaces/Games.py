@@ -342,7 +342,7 @@ class Game(Resource):
         playerIds = []
         for value in filteredPlayerIds:
             sendMail = False
-            player = UserModel.load_user_by_id(value)
+            player = UserModel.load_user_by_email(value) or UserModel.load_user_by_id(value)
             if player:
                 playerIds.append(player.id)
                 if player.id not in existingGame.playerIds:
