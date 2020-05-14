@@ -408,7 +408,7 @@ class Game(Resource):
         
         movieBids = BidModel.load_bids_by_gameId(gameId)
         for movieBid in movieBids:
-            movieBid.auctionExpiry = args['auctionDate']
+            movieBid.auctionExpiry = convert_to_utc(args['auctionDate'])
             movieBid.dollarSpendingCap = args['dollarSpendingCap']
             movieBid.update_bid()
         
