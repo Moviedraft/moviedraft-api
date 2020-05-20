@@ -44,8 +44,13 @@ gamePayload = games_namespace.model('GamePayload', {
         'rules': fields.Nested(rules_namespace.models['Rules'])
         })
 
-pollPayload = games_namespace.model('PollPayload', {
+PollPatchPayload = games_namespace.model('PollPatchPayload', {
         'vote': fields.String
+        })
+
+PollPostPayload = games_namespace.model('PollPostPayload', {
+        'question': fields.String,
+        'choices': fields.List(fields.String)
         })
 
 games_namespace.model('GamePostResponse', {
@@ -490,17 +495,17 @@ class Poll(Resource):
             abort(make_response(jsonify(message='Poll could not be found for game ID: \'{}\'.'.format(gameId)), 404))
         
         return make_response(jsonify(poll.serialize()), 200)
-
+    
     @jwt_required
-    @games_namespace.expect(pollPayload)
+    @games_namespace.expect(PollPatchPayload)
     @games_namespace.response(200, 'Success', games_namespace.models['Poll'])
     @games_namespace.response(400, 'Bad Request')
     @games_namespace.response(401, 'Authentication Error')
     @games_namespace.response(404, 'Not Found')
     @games_namespace.response(500, 'Internal Server Error')
-    def post(self, gameId):
+    def patch(self, gameId):
         parser = reqparse.RequestParser()
-        parser.add_argument('vote', required=False)
+        parser.add_argument('vote', required=True)
         args = parser.parse_args()
         
         game = GameModel.load_game_by_id(gameId)
@@ -525,6 +530,41 @@ class Poll(Resource):
         responsePoll = updatedPoll or poll
         
         return make_response(jsonify(responsePoll.serialize()), 200)
+    
+    @jwt_required
+    @games_namespace.expect(PollPostPayload)
+    @games_namespace.response(200, 'Success', games_namespace.models['Poll'])
+    @games_namespace.response(400, 'Bad Request')
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(403, 'Forbidden')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def post(self, gameId):
+        parser = reqparse.RequestParser()
+        parser.add_argument('question', required=True)
+        parser.add_argument('choices', type=list, location='json', required=True)
+        args = parser.parse_args()
+        
+        game = GameModel.load_game_by_id(gameId)
+        
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+        
+        userIdentity = get_jwt_identity()
+        currentUser = UserModel.load_user_by_id(userIdentity['id'])
+        
+        if currentUser.id != game.commissionerId:
+            abort(make_response(jsonify(message='User ID: \'{}\' is not authorized to access this resource.'
+                                        .format(currentUser.id)), 403))
+            
+        PollModel.disable_previous_poll(gameId)
+
+        newPoll = PollModel.create_poll(gameId, args['question'], args['choices'])
+        
+        if not newPoll:
+            abort(make_response(jsonify(message='Unable to create poll.'.format(gameId)), 500))
+
+        return make_response(jsonify(newPoll.serialize()), 200)
     
 @games_namespace.route('/<string:gameId>/join')
 class JoinGame(Resource):
