@@ -7,38 +7,91 @@ Created on Tue Apr 14 11:12:31 2020
 
 from utilities.Database import mongo
 from bson.objectid import ObjectId
+import json
 
-class ChoicesModel():
-    def __init__(self, choice):
-        self.displayText = choice['displayText']
-        self.votes = choice['votes']
-        
+class ChoiceModel():
+    def __init__(self, displayText, votes):
+        self.displayText = displayText
+        self.votes = votes
+
 class PollModel():
-    def __init__(self, id, gameId, question, choices):
-        self.id = id
+    def __init__(self, id, gameId, question, choices, current):
+        self._id = id
         self.gameId = gameId
         self.question = question
         self.choices = choices
+        self.current = current
     
     def serialize(self):
         choices = [{'displayText': choice.displayText, 'votes': choice.votes} for choice in self.choices]
         
         return {
-                'id': self.id,
+                'id': self._id,
                 'gameId': self.gameId,
                 'question': self.question,
-                'choices': choices
+                'choices': choices,
+                'current': self.current
                 }
     
+    def update_poll(self):
+        choiceModels = [ChoiceModel(displayText=choice.displayText, votes=choice.votes) for choice in self.choices]
+        jsonChoices = json.dumps([choice.__dict__ for choice in choiceModels])
+        
+        result = mongo.db.polls.update_one({'_id': ObjectId(self._id)}, 
+                                           {'$set': {'gameId': ObjectId(self.gameId),
+                                                     'question': self.question,
+                                                     'choices': json.loads(jsonChoices),
+                                                     'current': self.current}})
+        
+        if result.modified_count == 1:
+            return self.load_poll_by_id(self._id)
+        
+        return None
+    
     def update_vote(self, displayText, vote):
-        result = mongo.db.polls.update_one({'_id': ObjectId(self.id), 'choices.displayText': displayText}, 
+        result = mongo.db.polls.update_one({'_id': ObjectId(self._id), 'choices.displayText': displayText}, 
                                            { '$set': { 'choices.$.votes': vote }})
         
         if result.modified_count == 1:
-            return self.load_poll_by_id(self.id)
+            return self.load_poll_by_id(self._id)
         
         return None
+    
+    @classmethod
+    def create_poll(cls, gameId, question, choices):
+        choiceModels = [ChoiceModel(displayText=choice, votes=0) for choice in choices]
+        jsonChoices = json.dumps([choice.__dict__ for choice in choiceModels])
+        
+        pollModel = PollModel(id=ObjectId(), 
+                              gameId=ObjectId(gameId), 
+                              question=question, 
+                              choices=json.loads(jsonChoices), 
+                              current=True)
 
+        result = mongo.db.polls.insert_one(pollModel.__dict__)
+
+        if result.acknowledged:
+            insertedPoll = cls.load_poll_by_id(str(result.inserted_id))
+            return insertedPoll
+        
+        return None
+    
+    @classmethod
+    def disable_previous_poll(cls, gameId):
+        currentPoll = cls.load_poll_by_gameId(gameId)
+        
+        if not currentPoll:
+            return None
+
+        currentPoll.current = False
+
+        updatedPoll = currentPoll.update_poll()
+        
+        if not updatedPoll:
+            return None
+        
+        return updatedPoll
+        
     @classmethod
     def load_poll_by_id(cls, id):
         if not ObjectId.is_valid(id):
@@ -51,7 +104,7 @@ class PollModel():
     def load_poll_by_gameId(cls, gameId):
         if not ObjectId.is_valid(gameId):
             return None
-        queryDict = {'gameId': ObjectId(gameId)}
+        queryDict = {'gameId': ObjectId(gameId), 'current': True}
         poll = cls.load_poll(queryDict)
         return poll
     
@@ -61,10 +114,12 @@ class PollModel():
         if not poll:
             return None
         
-        choices = [ChoicesModel(choice) for choice in poll['choices']]
+        choices = [ChoiceModel(displayText=choice['displayText'], votes=choice['votes']) for choice in poll['choices']]
         
         return PollModel(id = str(poll['_id']),
                          gameId = str(poll['gameId']),
                          question = poll['question'],
-                         choices = choices)
+                         choices = choices,
+                         current = poll['current'])
     
+        
