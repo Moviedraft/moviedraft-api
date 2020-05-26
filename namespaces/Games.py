@@ -599,4 +599,4 @@ class JoinGame(Resource):
                                         'for game ID: \'{}\' and user ID \'{}\'.'
                                         .format(gameId, current_user.id)), 500))
         
-        return make_response('', 200)
+        return make_response(jsonify(message='Successfully joined game: \'{}\''.format(game.gameName)), 200)
