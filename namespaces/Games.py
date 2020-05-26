@@ -263,7 +263,7 @@ class Game(Resource):
             BidModel.delete_bids_by_game_id(game._id)
             try:
                 mongo.db.games.delete_one({'gameName': game.gameName})
-                return make_response('', 200)
+                return make_response(jsonify(message='Successfully deleted GameId: \'{}\'.'.format(gameId)), 200)
             except:
                 abort(make_response(jsonify('Game ID: \'{}\' could not be deleted'.format(gameId)), 500))
                 
