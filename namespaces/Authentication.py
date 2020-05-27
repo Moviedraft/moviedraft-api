@@ -197,7 +197,7 @@ class Logout(Resource):
         identity = get_jwt_identity()
         revoke_token(identity['tokenId'])
         
-        return make_response('', 200) 
+        return make_response(jsonify({ 'message': 'Successfully logged out.'}), 200)
 
 def get_google_provider_cfg():
     return requests.get(app.config['GOOGLE_DISCOVERY_URL']).json()
