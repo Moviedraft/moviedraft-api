@@ -28,7 +28,16 @@ class GameModel():
         self.playerIds = playerIds
         self.auctionComplete = auctionComplete
         self.auctionTimeIncrement = auctionTimeIncrement
-    
+
+    def create_game(self):
+        result = mongo.db.games.insert_one(self.__dict__)
+
+        if result.acknowledged:
+            insertedGame = self.load_game_by_id(str(result.inserted_id))
+            return insertedGame
+
+        return None
+
     def update_game(self):
         mongo.db.games.replace_one({'_id': ObjectId(self._id)}, 
                                    {'gameName': self.gameName,
@@ -118,4 +127,17 @@ class GameModel():
             games.append(gameModel)
         
         return games
-        
+
+    @classmethod
+    def delete_game_by_id(cls, game_id):
+        if not ObjectId.is_valid(game_id):
+            return False
+        queryDict = {'_id': ObjectId(game_id)}
+        deleted_count = cls.delete_game(queryDict)
+        return deleted_count > 0
+
+    @classmethod
+    def delete_game(cls, queryDict):
+        print(queryDict)
+        result = mongo.db.games.delete_one(queryDict)
+        return result.deleted_count

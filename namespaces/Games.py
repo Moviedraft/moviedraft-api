@@ -11,7 +11,6 @@ from flask_restplus import Namespace, Resource, fields, reqparse
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from bson.objectid import ObjectId
 from email.utils import parseaddr
-from utilities.Database import mongo
 from utilities.Mailer import Emailer
 from utilities.Executor import executor
 from utilities.DatetimeHelper import convert_to_utc
@@ -195,7 +194,7 @@ class CreateGames(Resource):
                 auctionComplete=False
                 )
 
-        result = mongo.db.games.insert_one(game.__dict__)
+        createdGame = game.create_game()
         
         commissioneruUserGame = UserGameModel.create_userGameModel(current_user.id, gameId, current_user.id, game.gameName, True)
         if not commissioneruUserGame:
@@ -219,7 +218,7 @@ class CreateGames(Resource):
                                                  user=current_user,
                                                  gameName=game.gameName))
             
-        return make_response(jsonify(id=str(result.inserted_id)), 200)
+        return make_response(jsonify(id=str(createdGame._id)), 200)
     
 @games_namespace.route('/<string:gameId>')
 class Game(Resource):
@@ -258,16 +257,20 @@ class Game(Resource):
     @games_namespace.response(500, 'Internal Server Error')
     def delete(self, gameId):
         game = GameModel.load_game_by_id(gameId)
-        if game:
-            UserGameModel.delete_user_games_by_game_id(game._id)
-            BidModel.delete_bids_by_game_id(game._id)
-            try:
-                mongo.db.games.delete_one({'gameName': game.gameName})
-                return make_response(jsonify(message='Successfully deleted GameId: \'{}\'.'.format(gameId)), 200)
-            except:
-                abort(make_response(jsonify('Game ID: \'{}\' could not be deleted'.format(gameId)), 500))
+
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+
+        UserGameModel.delete_user_games_by_game_id(game._id)
+        BidModel.delete_bids_by_game_id(game._id)
+        deleted = GameModel.delete_game_by_id(game._id)
+
+        if deleted:
+            return make_response(jsonify(message='Successfully deleted GameId: \'{}\'.'.format(gameId)), 200)
+
+        abort(make_response(jsonify('Game ID: \'{}\' could not be deleted'.format(gameId)), 500))
                 
-        abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+
     
     @jwt_required
     @games_namespace.expect(gamePatch)
@@ -383,10 +386,10 @@ class Game(Resource):
         print(playerIds)
         
         movieIds = []
-        for value in args['movies'] or []:
-            movie = mongo.db.movies.find_one({'_id': ObjectId(value)}, {'_id':1})
+        for id in args['movies'] or []:
+            movie = MovieModel.load_movie_by_id(id)
             if movie:
-                movieIds.append(str(movie['_id']))
+                movieIds.append(str(movie.id))
         args['movies'] = movieIds
         
         moviesToDelete = set(existingGame.movies).difference(set(movieIds))
@@ -403,10 +406,10 @@ class Game(Resource):
                 setattr(existingGame, 'gameNameLowerCase', value.lower())
                 
         ruleArray = []
-        for value in args['rules'] or []:
-            existingRule = mongo.db.rules.find_one({'ruleName': value['ruleName']}, {'_id':1})
+        for rule in args['rules'] or []:
+            existingRule = RuleModel.load_rule(rule)
             if existingRule:
-                ruleArray.append(value)
+                ruleArray.append(rule)
         args['rules'] = ruleArray
         
         updatedGame = existingGame.update_game()

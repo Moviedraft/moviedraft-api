@@ -39,7 +39,26 @@ class UserModel():
 
     def allowed(self, requiredRole):
         return self.role >= requiredRole
-    
+
+    def create_user(self):
+        dbUser = {
+            '_id': self.id,
+            'userHandle': self.userHandle,
+            'firstName': self.firstName,
+            'lastName': self.lastName,
+            'email': self.email,
+            'picture': self.picture,
+            'role': self.role,
+            'lastLoggedIn': convert_to_utc(self.lastLoggedIn)
+        }
+
+        result = mongo.db.users.insert_one(dbUser)
+
+        if result.acknowledged:
+            insertedUser = self.load_user_by_id(str(result.inserted_id))
+            return insertedUser
+
+        return None
     def update_user(self):
         result = mongo.db.users.update_one({'_id': ObjectId(self.id)}, 
                                             { '$set': {'userHandle': self.userHandle,
@@ -65,7 +84,7 @@ class UserModel():
 
     @classmethod
     def load_user_by_email(cls, email):
-        queryDict = {'emailAddress': email.lower()}
+        queryDict = {'email': email.lower()}
         user = cls.load_user(queryDict)  
         return user
 
@@ -81,7 +100,7 @@ class UserModel():
                 userHandle = user['userHandle'],
                 firstName = user['firstName'],
                 lastName = user['lastName'],
-                email = user['emailAddress'],
+                email = user['email'],
                 picture = user['picture'],
                 role = user['role'],
                 lastLoggedIn = string_format_date(user['lastLoggedIn']),
