@@ -250,16 +250,23 @@ class Game(Resource):
         return make_response(jsonify(game.__dict__), 200)
 
     @jwt_required
-    @requires_admin
     @games_namespace.response(200, 'Success')
     @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(403, 'Forbidden')
     @games_namespace.response(404, 'Not Found')
     @games_namespace.response(500, 'Internal Server Error')
     def delete(self, gameId):
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
+
         game = GameModel.load_game_by_id(gameId)
 
         if not game:
             abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+
+        if current_user.id != game.commissionerId:
+            abort(make_response(jsonify(message='You are not authorized to access this resource. '
+                                                'Game admin privilege required.'), 403))
 
         UserGameModel.delete_user_games_by_game_id(game._id)
         BidModel.delete_bids_by_game_id(game._id)
