@@ -250,7 +250,6 @@ class Game(Resource):
         return make_response(jsonify(game.__dict__), 200)
 
     @jwt_required
-    @requires_admin
     @games_namespace.response(200, 'Success')
     @games_namespace.response(401, 'Authentication Error')
     @games_namespace.response(404, 'Not Found')
