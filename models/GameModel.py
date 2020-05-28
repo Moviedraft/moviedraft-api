@@ -11,7 +11,7 @@ from utilities.DatetimeHelper import convert_to_utc, string_format_date
 
 class GameModel():
     def __init__(self, id, gameName, gameNameLowerCase, startDate, endDate, auctionDate,
-                 playerBuyIn, dollarSpendingCap, movies, auctionItemsExpireInSeconds, 
+                 dollarSpendingCap, movies, auctionItemsExpireInSeconds,
                  rules, commissionerId, playerIds, auctionComplete, auctionTimeIncrement = 7):
         self._id = id
         self.gameName = gameName
@@ -19,7 +19,6 @@ class GameModel():
         self.startDate = startDate
         self.endDate = endDate
         self.auctionDate = auctionDate
-        self.playerBuyIn = playerBuyIn
         self.dollarSpendingCap = dollarSpendingCap
         self.movies = movies
         self.auctionItemsExpireInSeconds = auctionItemsExpireInSeconds
@@ -45,7 +44,6 @@ class GameModel():
                                     'startDate': convert_to_utc(self.startDate),
                                     'endDate': convert_to_utc(self.endDate),
                                     'auctionDate': convert_to_utc(self.auctionDate),
-                                    'playerBuyIn': self.playerBuyIn,
                                     'dollarSpendingCap': self.dollarSpendingCap,
                                     'movies': self.movies,
                                     'auctionItemsExpireInSeconds': self.auctionItemsExpireInSeconds,
@@ -90,7 +88,6 @@ class GameModel():
                 startDate=string_format_date(game['startDate']),
                 endDate=string_format_date(game['endDate']),
                 auctionDate=string_format_date(game['auctionDate']),
-                playerBuyIn=game['playerBuyIn'],
                 dollarSpendingCap=game['dollarSpendingCap'],
                 movies=game['movies'],
                 auctionItemsExpireInSeconds=game['auctionItemsExpireInSeconds'],
@@ -114,7 +111,6 @@ class GameModel():
                     startDate=string_format_date(game['startDate']),
                     endDate=string_format_date(game['endDate']),
                     auctionDate=string_format_date(game['auctionDate']),
-                    playerBuyIn=game['playerBuyIn'],
                     dollarSpendingCap=game['dollarSpendingCap'],
                     movies=game['movies'],
                     auctionItemsExpireInSeconds=game['auctionItemsExpireInSeconds'],

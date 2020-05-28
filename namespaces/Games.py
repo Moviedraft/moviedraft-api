@@ -35,7 +35,6 @@ gamePayload = games_namespace.model('GamePayload', {
         'startDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'endDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'auctionDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
-        'playerBuyIn': fields.Integer,
         'dollarSpendingCap': fields.Integer,
         'playerIds': fields.List(fields.String),
         'movies': fields.List(fields.String),
@@ -65,7 +64,6 @@ games_namespace.model('Game', {
         'startDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'endDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'auctionDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
-        'playerBuyIn': fields.Integer,
         'dollarSpendingCap': fields.Integer,
         'movies': fields.List(fields.Nested(movies_namespace.models['MovieModelFields'])),
         'auctionItemsExpireInSeconds': fields.Integer,
@@ -130,7 +128,6 @@ class CreateGames(Resource):
         parser.add_argument('startDate', type=lambda x: arrow.get(x), required=True)
         parser.add_argument('endDate', type=lambda x: arrow.get(x), required=True)
         parser.add_argument('auctionDate', type=lambda x: arrow.get(x), required=True)
-        parser.add_argument('playerBuyIn', type=int, required=True)
         parser.add_argument('dollarSpendingCap', type=int, required=True)
         parser.add_argument('playerIds', type=list, location='json', required=True)
         parser.add_argument('movies', type=list, location='json', required=True)
@@ -184,7 +181,6 @@ class CreateGames(Resource):
                 startDate=UtcStartDate,
                 endDate=UtcEndDate,
                 auctionDate=UtcAuctionDate,
-                playerBuyIn=args['playerBuyIn'],
                 dollarSpendingCap=args['dollarSpendingCap'],
                 movies=args['movies'],
                 auctionItemsExpireInSeconds=args['auctionItemsExpireInSeconds'],
@@ -316,7 +312,6 @@ class Game(Resource):
         parser.add_argument('startDate', type=lambda x: arrow.get(x), required=True)
         parser.add_argument('endDate', type=lambda x: arrow.get(x), required=True)
         parser.add_argument('auctionDate', type=lambda x: arrow.get(x), required=True)
-        parser.add_argument('playerBuyIn', type=int, required=True)
         parser.add_argument('dollarSpendingCap', type=int, required=True)
         parser.add_argument('playerIds', type=list, location='json', required=True)
         parser.add_argument('movies', type=list, location='json', required=True)
