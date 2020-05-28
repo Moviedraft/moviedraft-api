@@ -138,6 +138,5 @@ class GameModel():
 
     @classmethod
     def delete_game(cls, queryDict):
-        print(queryDict)
         result = mongo.db.games.delete_one(queryDict)
         return result.deleted_count
