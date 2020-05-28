@@ -19,7 +19,6 @@ from bson.objectid import ObjectId
 from models.UserModel import UserModel
 from models.GameModel import GameModel
 from models.UserGameModel import UserGameModel
-from utilities.Database import mongo
 from utilities.WebApplicationClient import client
 from utilities.TokenHelpers import revoke_token, add_token_to_database, get_token_expiry
 from datetime import datetime, timedelta
@@ -107,17 +106,18 @@ class loginValidate(Resource):
         storedUser = UserModel.load_user_by_email(userEmail)
     
         if not storedUser:
-            mongo.db.users.insert_one({
-                'userHandle': userEmail.split('@')[0], 
-                'firstName': firstName,
-                'lastName': lastName,
-                'emailAddress': userEmail, 
-                'picture': picture,
-                'role': 1,
-                'lastLoggedIn': datetime.utcnow()
-                })
-    
-            storedUser = UserModel.load_user_by_email(userEmail)
+            userModel = UserModel(
+                id=ObjectId(),
+                userHandle=userEmail.split('@')[0],
+                firstName=firstName,
+                lastName=lastName,
+                email=userEmail,
+                picture=picture,
+                role=1,
+                lastLoggedIn=datetime.utcnow()
+            )
+
+            storedUser = UserModel.create_user(userModel)
             
             games = GameModel.load_games_by_user_email(userEmail)
             for game in games:
