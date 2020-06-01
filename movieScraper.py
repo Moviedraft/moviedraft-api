@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 Created on Tue Nov 26 11:20:36 2019
 
 @author: Jason
-"""
+'''
 
 # =============================================================================
-# Script requires three arguements to be passed when running:
+# Script requires four arguements to be passed when running:
 #     The connection string to MongoDB
 #     The database name
 #     The file path for ChromeDriver
@@ -24,6 +24,10 @@ class Movie:
         self.lastUpdated = datetime.strptime(datetime.utcnow().isoformat() , '%Y-%m-%dT%H:%M:%S.%f')     
 
 from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as ec
 from pymongo import MongoClient
 from datetime import datetime
 import sys
@@ -34,19 +38,26 @@ db = client.get_database(sys.argv[2])
 options = webdriver.ChromeOptions()
 experimentalFlags = ['same-site-by-default-cookies@1','cookies-without-same-site-must-be-secure@1']
 chromeLocalStatePrefs = { 'browser.enabled_labs_experiments' : experimentalFlags}
-
 options.add_experimental_option('localState',chromeLocalStatePrefs)
+
+caps = DesiredCapabilities().CHROME
+caps['pageLoadStrategy'] = 'none'
+
+options.add_argument('start-maximized')
+options.add_argument('enable-automation')
+options.add_argument('--blink-settings=imagesEnabled=false')
 options.add_argument('--headless')
 options.add_argument('--no-sandbox')
+options.add_argument('--disable-infobars')
+options.add_argument('--disable-dev-shm-usage')
+options.add_argument('--disable-browser-side-navigation')
 options.add_argument('--disable-gpu')
-options.add_argument('--window-size=1280x1696')
 options.add_argument('--hide-scrollbars')
-options.add_argument('--single-process')
 options.add_argument('--ignore-certificate-errors')
-options.add_argument('user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36')
 
-driver = webdriver.Chrome(sys.argv[3], options=options)
+driver = webdriver.Chrome(sys.argv[3], options=options, desired_capabilities=caps)
 driver.get(sys.argv[4])
+WebDriverWait(driver, timeout=10).until(ec.visibility_of_element_located((By.ID, 'page_filling_chart')))
 
 table = driver.find_element_by_xpath('//div[@id=\'page_filling_chart\']/table/tbody')
 
@@ -79,7 +90,7 @@ for row in movieArray:
         releaseDate = datetime.max
 
     title = str.strip(row[1][0:row[1].rfind('(')])
-    
+
     if 'Untitled' in title or 'Event Film' in title:
         print('Skipping over {}'.format(title))
         continue
@@ -95,10 +106,20 @@ for row in movieArray:
         
     movieUrlElement = table.find_element_by_partial_link_text(title)
     url = movieUrlElement.get_property('href')
-    
-    movie = Movie(releaseDate, title, releaseType, row[2], url, 0)
-    
-    existingMovie = db.movies.find_one({"url": url})
+
+    #Need to go to the actual movie page to retrieve the proper movie url and title.
+    #Without doing this, a movie could change its title and then a duplicate entry would be created.
+    movieDriver = webdriver.Chrome(sys.argv[3], options=options, desired_capabilities=caps)
+    movieDriver.get(url)
+    WebDriverWait(movieDriver, timeout=10).until(ec.visibility_of_element_located((By.TAG_NAME, 'h1')))
+    redirectMovieUrl = movieDriver.current_url
+    title = movieDriver.find_element_by_xpath('//h1').text
+    formattedTitle = str.strip(title[0:title.rfind('(')])
+    movieDriver.close()
+
+    movie = Movie(releaseDate, formattedTitle, releaseType, row[2], redirectMovieUrl, 0)
+
+    existingMovie = db.movies.find_one({'url': url})
     if existingMovie:
         try:
             movie.domesticGross = existingMovie['domesticGross']
