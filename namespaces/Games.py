@@ -23,9 +23,9 @@ from models.UserGameModel import UserGameModel
 from models.PlayerModel import PlayerModel
 from models.WeekendBoxOfficeModel import WeekendBoxOfficeModel
 from models.PollModel import PollModel
+from models.FlavorTextModel import FlavorTextModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
-from decorators.RoleAccessDecorator import requires_admin
 import arrow
 
 games_namespace = Namespace('games', description='Draft league game data.')
@@ -49,6 +49,15 @@ PollPatchPayload = games_namespace.model('PollPatchPayload', {
 PollPostPayload = games_namespace.model('PollPostPayload', {
         'question': fields.String,
         'choices': fields.List(fields.String)
+        })
+
+FlavorTextPostPayload = games_namespace.model('FlavorTextPostPayload', {
+        'type': fields.String,
+        'text': fields.String
+        })
+
+FlavorTextPatchPayload = games_namespace.model('FlavorTextPatchPayload', {
+        'text': fields.String
         })
 
 games_namespace.model('GamePostResponse', {
@@ -111,6 +120,13 @@ games_namespace.model('Poll', {
         'gameId': fields.String,
         'question': fields.String,
         'choices': fields.List(fields.Nested(games_namespace.models['PollChoice']))
+        })
+
+games_namespace.model('FlavorText', {
+        'id': fields.String,
+        'gameId': fields.String,
+        'type': fields.String,
+        'text': fields.String
         })
 
 @games_namespace.route('')
@@ -570,7 +586,104 @@ class Poll(Resource):
             abort(make_response(jsonify(message='Unable to create poll.'.format(gameId)), 500))
 
         return make_response(jsonify(newPoll.serialize()), 200)
-    
+
+@games_namespace.route('/<string:gameId>/flavortext/<string:type>')
+class FlavorText(Resource):
+    @jwt_required
+    @games_namespace.response(200, 'Success', games_namespace.models['FlavorText'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(403, 'Forbidden')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def get(self, gameId, type):
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
+
+        game = GameModel.load_game_by_id(gameId)
+
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+
+        if current_user.id not in game.playerIds and current_user.id != game.commissionerId:
+            abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
+
+        flavor_text = FlavorTextModel.load_flavor_text_by_game_id_and_type(gameId, type)
+
+        if not flavor_text:
+            abort(make_response(jsonify(message='Flavor text could not be found for game ID: \'{}\' type: \'{}\'.'
+                                        .format(gameId, type)), 404))
+
+        return make_response(jsonify(flavorText=flavor_text.serialize()), 200)
+
+    @jwt_required
+    @games_namespace.expect(FlavorTextPatchPayload)
+    @games_namespace.response(200, 'Success', games_namespace.models['FlavorText'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(403, 'Forbidden')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def patch(self, gameId, type):
+        parser = reqparse.RequestParser()
+        parser.add_argument('text', required=True)
+        args = parser.parse_args()
+
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
+
+        game = GameModel.load_game_by_id(gameId)
+
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+
+        if current_user.id != game.commissionerId:
+            abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
+
+        flavor_text = FlavorTextModel.load_flavor_text_by_game_id_and_type(gameId, type)
+
+        if not flavor_text:
+            abort(make_response(jsonify(message='Flavor text could not be created.'), 500))
+
+        flavor_text.text = args['text']
+        updated_flavor_text = flavor_text.update_flavor_text()
+
+        if not updated_flavor_text:
+            abort(make_response(jsonify(message='Unable to update flavor text.'), 500))
+
+        return make_response(jsonify(flavorText=flavor_text.__dict__), 200)
+
+@games_namespace.route('/<string:gameId>/flavortext')
+class PostFlavorText(Resource):
+    @jwt_required
+    @games_namespace.expect(FlavorTextPostPayload)
+    @games_namespace.response(200, 'Success', games_namespace.models['FlavorText'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(403, 'Forbidden')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def post(self, gameId):
+        parser = reqparse.RequestParser()
+        parser.add_argument('type', required=True)
+        parser.add_argument('text', required=True)
+        args = parser.parse_args()
+
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
+
+        game = GameModel.load_game_by_id(gameId)
+
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
+
+        if current_user.id != game.commissionerId:
+            abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
+
+        flavor_text = FlavorTextModel.create_flavor_text(gameId, args['type'], args['text'])
+
+        if not flavor_text:
+            abort(make_response(jsonify(message='Flavor text could not be created.'), 500))
+
+        return make_response(jsonify(flavorText=flavor_text.__dict__), 200)
+
 @games_namespace.route('/<string:gameId>/join')
 class JoinGame(Resource):
     @jwt_required
