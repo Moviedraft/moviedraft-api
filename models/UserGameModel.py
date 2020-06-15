@@ -9,12 +9,13 @@ from utilities.Database import mongo
 from bson.objectid import ObjectId
 
 class UserGameModel():
-    def __init__(self, id, commissioner_id, game_id, user_id, gameName, joined):
+    def __init__(self, id, commissioner_id, game_id, user_id, gameName, auctionDate, joined):
         self._id = id
         self.commissioner_id = commissioner_id
         self.game_id = game_id
         self.user_id = user_id
         self.gameName = gameName
+        self.auctionDate = auctionDate
         self.joined = joined
     
     def serialize(self): 
@@ -24,6 +25,7 @@ class UserGameModel():
         'game_id': self.game_id,
         'user_id': self.user_id,
         'gameName': self.gameName,
+        'auctionDate': self.auctionDate,
         'joined': self.joined
         }
     
@@ -34,6 +36,7 @@ class UserGameModel():
                                              'game_id': ObjectId(self.game_id),
                                              'user_id': ObjectId(self.user_id),
                                              'gameName': self.gameName,
+                                             'auctionDate': self.auctionDate,
                                              'joined': self.joined
                                             }})
         if result.modified_count == 1:
@@ -42,7 +45,7 @@ class UserGameModel():
         return None
     
     @classmethod
-    def create_userGameModel(cls, commissioner_id, game_id, user_id, gameName, joined = False):
+    def create_userGameModel(cls, commissioner_id, game_id, user_id, gameName, auctionDate, joined = False):
         if not ObjectId.is_valid(commissioner_id) or not ObjectId.is_valid(game_id):
             return None
         
@@ -53,6 +56,7 @@ class UserGameModel():
                                     game_id=ObjectId(game_id),
                                     user_id=userId,
                                     gameName=gameName,
+                                    auctionDate=auctionDate,
                                     joined=joined)
         result = mongo.db.usergames.insert_one(userGameModel.__dict__)
         
@@ -104,6 +108,7 @@ class UserGameModel():
                              game_id=str(userGame['game_id']), 
                              user_id=str(userGame['user_id']), 
                              gameName=userGame['gameName'],
+                             auctionDate=userGame['auctionDate'],
                              joined=userGame['joined']
                              )
     
@@ -117,6 +122,7 @@ class UserGameModel():
                                      game_id=str(game['game_id']), 
                                      user_id=str(game['user_id']), 
                                      gameName=game['gameName'],
+                                     auctionDate=game['auctionDate'],
                                      joined=game['joined']
                                      )
             userGames.append(userGame)
