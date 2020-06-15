@@ -208,13 +208,13 @@ class CreateGames(Resource):
 
         createdGame = game.create_game()
         
-        commissioneruUserGame = UserGameModel.create_userGameModel(current_user.id, gameId, current_user.id, game.gameName, True)
+        commissioneruUserGame = UserGameModel.create_userGameModel(current_user.id, gameId, current_user.id, game.gameName, game.auctionDate, True)
         if not commissioneruUserGame:
             abort(make_response(jsonify(message='Unable to associate commissionerId \'{}\' with game: \'{}\'.'
                                                 .format(current_user.id, game.gameName)), 500))
         
         for playerId in playerIds:
-            userGame = UserGameModel.create_userGameModel(current_user.id, gameId, playerId, args['gameName'])
+            userGame = UserGameModel.create_userGameModel(current_user.id, gameId, playerId, args['gameName'], game.auctionDate)
             if not userGame:
                 abort(make_response(jsonify(message='Unable to associate userId \'{}\' with game: \'{}\'.'
                                             .format(playerId, game.gameName)), 500))
@@ -350,10 +350,8 @@ class Game(Resource):
         if arrow.utcnow() > arrow.get(existingGame.auctionDate):
             abort(make_response(jsonify(message='Game ID: \'{}\' cannot be edited after the auction date: \'{}\''
                                         .format(existingGame._id, existingGame.auctionDate)), 403))
-        
-        oldgameNameLowerCase = existingGame.gameNameLowerCase
-        
-        if args['gameName'].lower() != oldgameNameLowerCase:
+
+        if args['gameName'].lower() != existingGame.gameNameLowerCase:
             gameWithRequestedNewName = GameModel.load_game_by_name(args['gameName'])
             if gameWithRequestedNewName:
                 abort(make_response(jsonify(message='Game name: \'{}\' already exists.'
@@ -398,10 +396,9 @@ class Game(Resource):
         
         playersToAdd = set(playerIds).difference(set(existingGame.playerIds))
         for playerId in playersToAdd:
-            UserGameModel.create_userGameModel(current_user.id, gameId, playerId, existingGame.gameName)
+            UserGameModel.create_userGameModel(current_user.id, gameId, playerId, existingGame.gameName, existingGame.auctionDate)
             
         args['playerIds'] = playerIds
-        print(playerIds)
         
         movieIds = []
         for id in args['movies'] or []:
@@ -438,14 +435,14 @@ class Game(Resource):
             movieBid.dollarSpendingCap = args['dollarSpendingCap']
             movieBid.update_bid()
         
-        if oldgameNameLowerCase != updatedGame.gameNameLowerCase:
-            userGames = UserGameModel.load_user_game_by_game_id(updatedGame._id)
-            for userGame in userGames:
-                userGame.gameName = updatedGame.gameName
-                updatedUserGame = userGame.update_userGameModel()
-                if not updatedUserGame:
-                    abort(make_response(jsonify('Game could not be updated for gameId: \'{}\' and userId: \'{}\'.'
-                                                .format(userGame.game_id, userGame.user_id)), 500))
+        userGames = UserGameModel.load_user_game_by_game_id(updatedGame._id)
+        for userGame in userGames:
+            userGame.gameName = updatedGame.gameName
+            userGame.auctionDate = convert_to_utc(updatedGame.auctionDate)
+            updatedUserGame = userGame.update_userGameModel()
+            if not updatedUserGame:
+                abort(make_response(jsonify('Game could not be updated for gameId: \'{}\' and userId: \'{}\'.'
+                                            .format(userGame.game_id, userGame.user_id)), 500))
         
         return make_response(updatedGame.__dict__, 200)
 
