@@ -14,12 +14,13 @@ Created on Tue Nov 26 11:20:36 2019
 # =============================================================================
     
 class Movie:
-    def __init__(self, releaseDate, title, releaseType, distributor, url, domesticGross):
+    def __init__(self, releaseDate, title, releaseType, distributor, url, posterUrl, domesticGross):
         self.releaseDate = releaseDate
         self.title = title
         self.releaseType = releaseType
         self.distributor = distributor
         self.url = url
+        self.posterUrl = posterUrl
         self.domesticGross = domesticGross
         self.lastUpdated = datetime.strptime(datetime.utcnow().isoformat() , '%Y-%m-%dT%H:%M:%S.%f')     
 
@@ -117,12 +118,13 @@ for row in movieArray:
     formattedTitle = str.strip(title[0:title.rfind('(')])
     movieDriver.close()
 
-    movie = Movie(releaseDate, formattedTitle, releaseType, row[2], redirectMovieUrl, 0)
+    movie = Movie(releaseDate, formattedTitle, releaseType, row[2], redirectMovieUrl, '', 0)
 
     existingMovie = db.movies.find_one({'url': url})
     if existingMovie:
         try:
             movie.domesticGross = existingMovie['domesticGross']
+            movie.posterUrl = existingMovie['posterUrl']
         except KeyError:
             pass
         db.movies.replace_one(existingMovie, movie.__dict__)
