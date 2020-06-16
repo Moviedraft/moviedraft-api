@@ -468,12 +468,13 @@ class GamePlayerRankings(Resource):
         
         commissioner = PlayerModel.loadPlayer(game.commissionerId, gameBids)
         players.append(commissioner)
-        
+
         for id in game.playerIds:
             player = PlayerModel.loadPlayer(id, gameBids)
-            playerJoined = UserGameModel.load_user_game_by_game_id_and_user_id(game._id, player.id).joined
-            if playerJoined:
-                players.append(player)
+            if player:
+                playerJoined = UserGameModel.load_user_game_by_game_id_and_user_id(game._id, player.id).joined
+                if playerJoined:
+                    players.append(player)
             
         return make_response(jsonify(players=[player.serialize() for player in players]), 200)
 
