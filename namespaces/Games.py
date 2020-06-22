@@ -13,7 +13,7 @@ from bson.objectid import ObjectId
 from email.utils import parseaddr
 from utilities.Mailer import Emailer
 from utilities.Executor import executor
-from utilities.DatetimeHelper import convert_to_utc
+from utilities.DatetimeHelper import convert_to_utc, get_current_time
 from models.GameModel import GameModel
 from models.RuleModel import RuleModel
 from models.MovieModel import MovieModel
@@ -127,6 +127,10 @@ games_namespace.model('FlavorText', {
         'gameId': fields.String,
         'type': fields.String,
         'text': fields.String
+        })
+
+games_namespace.model('CurrentTime', {
+        'time': fields.String
         })
 
 @games_namespace.route('')
@@ -717,3 +721,14 @@ class JoinGame(Resource):
                                         .format(gameId, current_user.id)), 500))
         
         return make_response(jsonify(message='Successfully joined game: \'{}\''.format(game.gameName)), 200)
+
+@games_namespace.route('/time')
+class CurrentTime(Resource):
+    @jwt_required
+    @games_namespace.response(200, 'Success', games_namespace.models['CurrentTime'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(500, 'Internal Server Error')
+    def get(self):
+        current_time = get_current_time()
+
+        return make_response((jsonify(time=current_time)), 200)

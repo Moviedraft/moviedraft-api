@@ -21,3 +21,7 @@ def get_most_recent_monday():
     today = datetime.today()
     monday = today - timedelta(days=today.weekday())
     return arrow.get(monday).format('YYYY-MM-DD')
+
+def get_current_time():
+    formattedDatetime = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSZ').replace('+0000', 'Z')
+    return formattedDatetime
