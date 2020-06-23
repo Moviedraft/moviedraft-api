@@ -441,7 +441,9 @@ class Game(Resource):
             movieBid.update_bid()
         
         userGames = UserGameModel.load_user_game_by_game_id(updatedGame._id)
-        for userGame in userGames:
+        for userGame in [userGame for userGame in userGames
+                         if userGame.gameName != updatedGame.gameName
+                         or arrow.get(userGame.auctionDate) != arrow.get(updatedGame.auctionDate)]:
             userGame.gameName = updatedGame.gameName
             userGame.auctionDate = convert_to_utc(updatedGame.auctionDate)
             updatedUserGame = userGame.update_userGameModel()
