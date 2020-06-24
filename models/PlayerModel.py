@@ -5,6 +5,7 @@ Created on Tue Mar 24 13:22:31 2020
 @author: Jason
 """
 
+from utilities.DatetimeHelper import string_format_date
 from models.MovieModel import MovieModel
 from models.UserModel import UserModel
 
@@ -39,7 +40,9 @@ class PlayerModel():
 
         moviesPurchased = MovieModel.load_movies_by_ids([playerBid.movie_id for playerBid in playerBids])
         totalGross = sum(movie.domesticGross for movie in moviesPurchased)
-        movies = [{ 'title': movie.title, 'cost': next((bid.bid for bid in playerBids if bid.movie_id == movie.id)) } for movie in moviesPurchased]
+        movies = [{ 'title': movie.title,
+                    'cost': next((bid.bid for bid in playerBids if bid.movie_id == movie.id)),
+                    'releaseDate': string_format_date(movie.releaseDate) } for movie in moviesPurchased]
         
         value = round(totalGross / totalSpent) if totalSpent else 0
 
