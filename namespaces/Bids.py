@@ -149,7 +149,7 @@ class Bid(Resource):
                                         format(game.dollarSpendingCap)), 400))
         
         currentBids = BidModel.load_bids_by_gameId_and_userId(args['gameId'], current_user.id)
-        totalSpent = sum(bid.bid for bid in currentBids)
+        totalSpent = sum(bid.bid for bid in currentBids if bid.auctionExpirySet and arrow.utcnow() > arrow.get(bid.auctionExpiry))
         if totalSpent + args['bid'] > game.dollarSpendingCap:
             abort(make_response(jsonify(message='You have ${} left in the auction to spend.'.
                                         format(game.dollarSpendingCap - totalSpent)), 400))
@@ -162,5 +162,5 @@ class Bid(Resource):
             updatedRecord = highestBid.update_bid()
             return make_response(updatedRecord.__dict__, 200)
         else:
-            abort(make_response(jsonify(message='Bid of: ${} did not exceed minimum bid of ${}.'.
-                                        format(args['bid'], highestBid.bid)), 400))
+            abort(make_response(jsonify(message='Bid of ${} did not meet or exceed minimum bid of ${}.'.
+                                        format(args['bid'], highestBid.bid + 1)), 400))
