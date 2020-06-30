@@ -8,7 +8,6 @@ Created on Tue Mar 24 13:22:31 2020
 from utilities.DatetimeHelper import string_format_date
 from models.MovieModel import MovieModel
 from models.UserModel import UserModel
-import arrow
 
 class PlayerModel():
     def __init__(self, id, userHandle, totalSpent, totalGross, movies, value):
@@ -35,10 +34,7 @@ class PlayerModel():
         if not player:
             return None
         
-        playerBids = [bid for bid in gameBids if
-                      bid.user_id == player.id and
-                      bid.auctionExpirySet and
-                      arrow.utcnow() > arrow.get(bid.auctionExpiry)]
+        playerBids = [bid for bid in gameBids if bid.user_id == player.id]
 
         totalSpent = sum(bid.bid for bid in playerBids)
 
