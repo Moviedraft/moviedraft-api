@@ -473,11 +473,11 @@ class GamePlayerRankings(Resource):
             
         players = []
         
-        commissioner = PlayerModel.loadPlayer(game.commissionerId, gameBids)
+        commissioner = PlayerModel.loadPlayer(game.commissionerId, gameBids, game.rules)
         players.append(commissioner)
 
         for id in game.playerIds:
-            player = PlayerModel.loadPlayer(id, gameBids)
+            player = PlayerModel.loadPlayer(id, gameBids, game.rules)
             if player:
                 playerJoined = UserGameModel.load_user_game_by_game_id_and_user_id(game._id, player.id).joined
                 if playerJoined:

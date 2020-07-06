@@ -8,6 +8,7 @@ Created on Tue Mar 24 13:22:31 2020
 from utilities.DatetimeHelper import string_format_date
 from models.MovieModel import MovieModel
 from models.UserModel import UserModel
+from models.RuleModel import RuleModel
 
 class PlayerModel():
     def __init__(self, id, userHandle, totalSpent, totalGross, movies, value):
@@ -29,7 +30,7 @@ class PlayerModel():
                 }
         
     @classmethod
-    def loadPlayer(cls, playerId, gameBids):
+    def loadPlayer(cls, playerId, gameBids, rules):
         player = UserModel.load_user_by_id(playerId)
         if not player:
             return None
@@ -39,7 +40,14 @@ class PlayerModel():
         totalSpent = sum(bid.bid for bid in playerBids)
 
         moviesPurchased = MovieModel.load_movies_by_ids([playerBid.movie_id for playerBid in playerBids])
-        totalGross = sum(movie.domesticGross for movie in moviesPurchased)
+
+        grossCapRule = next((rule for rule in rules if rule['ruleName'] == 'grossCap'), None)
+        totalGross = sum(RuleModel.apply_gross_cap(movie.domesticGross,
+                                                   grossCapRule['rules']['capValue'],
+                                                   grossCapRule['rules']['centsOnDollar']) for movie in moviesPurchased) \
+            if grossCapRule \
+            else sum(movie.domesticGross for movie in moviesPurchased)
+
         movies = [{ 'title': movie.title,
                     'cost': next((bid.bid for bid in playerBids if bid.movie_id == movie.id)),
                     'releaseDate': string_format_date(movie.releaseDate) } for movie in moviesPurchased]
