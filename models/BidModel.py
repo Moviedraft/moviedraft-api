@@ -5,7 +5,7 @@ Created on Thu Feb  6 07:28:06 2020
 @author: Jason
 """
 from utilities.Database import mongo
-from utilities.DatetimeHelper import string_format_date, get_current_time
+from utilities.DatetimeHelper import string_format_date
 from bson.objectid import ObjectId
 
 class BidModel():
@@ -20,7 +20,6 @@ class BidModel():
         self.bid = bid
         self.dollarSpendingCap = dollarSpendingCap
         self.userHandle = userHandle
-        self.currentTime = get_current_time()
 
     def serialize(self): 
         return {           
