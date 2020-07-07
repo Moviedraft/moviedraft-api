@@ -147,12 +147,16 @@ class Bid(Resource):
         if args['bid'] > game.dollarSpendingCap:
             abort(make_response(jsonify(message='Bid must be below game\'s bid cap: ${}'.
                                         format(game.dollarSpendingCap)), 400))
-        
+
+        if highestBid.user_id == current_user.id:
+            abort(make_response(jsonify(message='Bid not accepted as you ({}) are the current high bidder.'
+                                        .format(current_user.userHandle)), 400))
+
         currentBids = BidModel.load_bids_by_gameId_and_userId(args['gameId'], current_user.id)
         totalSpent = sum(bid.bid for bid in currentBids)
         if totalSpent + args['bid'] > game.dollarSpendingCap:
-            abort(make_response(jsonify(message='You have ${} left in the auction to spend.'.
-                                        format(game.dollarSpendingCap - totalSpent)), 400))
+            abort(make_response(jsonify(message='You have ${} left in the auction to spend.'
+                                        .format(game.dollarSpendingCap - totalSpent)), 400))
             
         if highestBid.bid == None or args['bid'] > highestBid.bid:
             highestBid.bid = args['bid']
