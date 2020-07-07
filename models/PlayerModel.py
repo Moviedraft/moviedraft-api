@@ -41,12 +41,7 @@ class PlayerModel():
 
         moviesPurchased = MovieModel.load_movies_by_ids([playerBid.movie_id for playerBid in playerBids])
 
-        grossCapRule = next((rule for rule in rules if rule['ruleName'] == 'grossCap'), None)
-        totalGross = sum(RuleModel.apply_gross_cap(movie.domesticGross,
-                                                   grossCapRule['rules']['capValue'],
-                                                   grossCapRule['rules']['centsOnDollar']) for movie in moviesPurchased) \
-            if grossCapRule \
-            else sum(movie.domesticGross for movie in moviesPurchased)
+        totalGross = RuleModel.apply_rules(moviesPurchased, rules, playerBids)
 
         movies = [{ 'title': movie.title,
                     'cost': next((bid.bid for bid in playerBids if bid.movie_id == movie.id)),
