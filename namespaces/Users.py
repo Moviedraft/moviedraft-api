@@ -14,7 +14,8 @@ from models.BidModel import BidModel
 users_namespace = Namespace('users', description='User information.')
 
 userPatch = users_namespace.model('UserPatch',{
-        'userHandle': fields.String
+        'userHandle': fields.String,
+        'picture': fields.String
         })
 
 users_namespace.model('User',{
@@ -53,6 +54,7 @@ class Users(Resource):
     def patch(self):
         parser = reqparse.RequestParser()
         parser.add_argument('userHandle')
+        parser.add_argument('picture')
         args = parser.parse_args()
         
         userIdentity = get_jwt_identity()
