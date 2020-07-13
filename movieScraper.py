@@ -135,3 +135,5 @@ for row in movieArray:
     else:
         db.movies.insert_one(movie.__dict__)
         print('Inserted movie title: {}'.format(movie.title))
+
+driver.close()
