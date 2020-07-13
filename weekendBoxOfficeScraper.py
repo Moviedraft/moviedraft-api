@@ -14,6 +14,11 @@ class WeekendBoxOffice:
         self.weekendEnding = datetime.strptime(datetime.utcnow().isoformat() , '%Y-%m-%dT%H:%M:%S.%f') 
         
 from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.common.exceptions import NoSuchElementException
 from pymongo import MongoClient
 from datetime import datetime
 import sys
@@ -31,9 +36,13 @@ options.add_argument('--single-process')
 options.add_argument('--ignore-certificate-errors')
 options.add_argument('user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36')
 
-driver = webdriver.Chrome(sys.argv[3], options=options)
+caps = DesiredCapabilities().CHROME
+caps['pageLoadStrategy'] = 'none'
 
+driver = webdriver.Chrome(sys.argv[3], options=options, desired_capabilities=caps)
 driver.get(sys.argv[4])
+WebDriverWait(driver, timeout=10).until(ec.visibility_of_element_located((By.ID, 'page_filling_chart')))
+
 weekendGrossTable = driver.find_element_by_id('box_office_weekend_table')
 
 movieArray = []
@@ -54,9 +63,15 @@ for row in weekendGrossTable.find_elements_by_xpath('.//tr')[:11]:
     databaseMovie = db.movies.find_one({'url': link.replace('#tab=box-office', '#tab=summary')})
     if not databaseMovie:
         print('{} not in db. Retrieving title from website.'.format(tds[2].text))
-        movieDriver = webdriver.Chrome(sys.argv[3], options=options)
+        movieDriver = webdriver.Chrome(sys.argv[3], options=options, desired_capabilities=caps)
         movieDriver.get(link)
-        movieTitle = movieDriver.find_element_by_xpath('//div[@id=\'main\']/div/h1').text[:-7]
+        WebDriverWait(movieDriver, timeout=10).until(ec.visibility_of_element_located((By.ID, 'col2outer')))
+        try:
+            movieTitle = movieDriver.find_element_by_xpath('//div[@id=\'main\']/div/h1').text[:-7]
+        except NoSuchElementException:
+            movieTitle = movieDriver.find_element_by_xpath('//div[@id=\'main\']/h1').text[:-7]
+
+        movieDriver.close()
     else:
         movieTitle = databaseMovie['title']
     
@@ -72,5 +87,5 @@ for row in weekendGrossTable.find_elements_by_xpath('.//tr')[:11]:
     
     db.weekendboxoffice.insert_one(weekendBoxOffice.__dict__)
     print('{} inserted into database'.format(weekendBoxOffice.title))
-	
-	
+
+driver.close()
