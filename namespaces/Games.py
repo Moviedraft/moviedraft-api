@@ -259,7 +259,9 @@ class Game(Resource):
         movies = []
         for movieId in game.movies:
             movieModel = MovieModel.load_movie_by_id(movieId)
-            if arrow.get(game.startDate) <= arrow.get(movieModel.releaseDate) <= arrow.get(game.endDate):
+            if arrow.get(game.startDate).date() \
+                    <= arrow.get(movieModel.releaseDate).date()  \
+                    <= arrow.get(game.endDate).date():
                 movies.append(movieModel.__dict__)
             game.movies = movies
 
