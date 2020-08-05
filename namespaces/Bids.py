@@ -162,7 +162,16 @@ class Bid(Resource):
             highestBid.bid = args['bid']
             highestBid.user_id = ObjectId(current_user.id)
             highestBid.userHandle = current_user.userHandle
-            highestBid.auctionExpiry = convert_to_utc(arrow.get(highestBid.auctionExpiry).shift(seconds=+game.auctionTimeIncrement))
+
+            shiftedTime = arrow.get(highestBid.auctionExpiry).shift(seconds=+game.auctionTimeIncrement)
+            secondsDiff = round(abs((arrow.utcnow() - shiftedTime).total_seconds()))
+            if secondsDiff > game.auctionItemsExpireInSeconds:
+                adjustedSecondsShift = secondsDiff - game.auctionItemsExpireInSeconds
+                adjustedTime = convert_to_utc(arrow.get(highestBid.auctionExpiry).shift(seconds=+adjustedSecondsShift))
+            else:
+                adjustedTime = convert_to_utc(shiftedTime)
+
+            highestBid.auctionExpiry = adjustedTime
             updatedRecord = highestBid.update_bid()
             return make_response(updatedRecord.__dict__, 200)
         else:
