@@ -14,7 +14,7 @@ from models.BidModel import BidModel
 from models.GameModel import GameModel
 from models.UserModel import UserModel
 from models.UserGameModel import UserGameModel
-from utilities.DatetimeHelper import convert_to_utc, string_format_date
+from utilities.DatetimeHelper import convert_to_utc
 import arrow
 
 bids_namespace = Namespace('bids', description='Retrieve auction bid data.')
