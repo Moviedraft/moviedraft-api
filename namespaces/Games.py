@@ -23,6 +23,7 @@ from models.UserGameModel import UserGameModel
 from models.PlayerModel import PlayerModel
 from models.WeekendBoxOfficeModel import WeekendBoxOfficeModel
 from models.PollModel import PollModel
+from models.SideBetModel import SideBetModel
 from models.FlavorTextModel import FlavorTextModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
@@ -58,6 +59,12 @@ FlavorTextPostPayload = games_namespace.model('FlavorTextPostPayload', {
 
 FlavorTextPatchPayload = games_namespace.model('FlavorTextPatchPayload', {
         'text': fields.String
+        })
+
+SideBetPostPayload = games_namespace.model('SideBetPostPayload', {
+        'movieId': fields.String,
+        'prizeInMillions': fields.Integer,
+        'closeDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00')
         })
 
 games_namespace.model('GamePostResponse', {
@@ -121,6 +128,20 @@ games_namespace.model('Poll', {
         'question': fields.String,
         'choices': fields.List(fields.Nested(games_namespace.models['PollChoice']))
         })
+
+games_namespace.model('Bet', {
+    'userId': fields.String,
+    'bet': fields.Integer
+})
+
+games_namespace.model('SideBet', { 'id': fields.String,
+                                   'gameId': fields.String,
+                                   'movieId': fields.String,
+                                   'prizeInMillions': fields.Integer,
+                                   'closeDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
+                                   'bets': fields.List(fields.Nested(games_namespace.models['Bet'])),
+                                   'winner': fields.String
+                                   })
 
 games_namespace.model('FlavorText', {
         'id': fields.String,
@@ -600,6 +621,66 @@ class Poll(Resource):
             abort(make_response(jsonify(message='Unable to create poll.'.format(gameId)), 500))
 
         return make_response(jsonify(newPoll.serialize()), 200)
+
+@games_namespace.route('/<string:game_id>/sidebet')
+class SideBet(Resource):
+    @jwt_required
+    @games_namespace.response(200, 'Success', games_namespace.models['SideBet'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(403, 'Forbidden')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def get(self, game_id):
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
+
+        game = GameModel.load_game_by_id(game_id)
+
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(game_id)), 404))
+
+        if current_user.id not in game.playerIds and current_user.id != game.commissionerId:
+            abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
+
+        side_bet = SideBetModel.load_side_bet_by_game_id(game_id)
+
+        if not side_bet:
+            abort(make_response(jsonify(message='Side bet could not be found for game ID: \'{}\'.'
+                                        .format(game_id)), 404))
+
+        return make_response(jsonify(sideBet=side_bet.serialize()), 200)
+
+    @jwt_required
+    @games_namespace.expect(SideBetPostPayload)
+    @games_namespace.response(200, 'Success', games_namespace.models['SideBet'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(403, 'Forbidden')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def post(self, game_id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('movieId', required=True)
+        parser.add_argument('prizeInMillions', type=int, required=True)
+        parser.add_argument('closeDate', type=lambda x: arrow.get(x), required=True)
+        args = parser.parse_args()
+
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
+
+        game = GameModel.load_game_by_id(game_id)
+
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(game_id)), 404))
+
+        if current_user.id != game.commissionerId:
+            abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
+
+        side_bet = SideBetModel.create_side_bet(game_id, args['movieId'], args['prizeInMillions'], args['closeDate'])
+
+        if not side_bet:
+            abort(make_response(jsonify(message='Side bet could not be created.'), 500))
+
+        return make_response(jsonify(sideBet=side_bet.serialize()), 200)
 
 @games_namespace.route('/<string:gameId>/flavortext/<string:type>')
 class FlavorText(Resource):
