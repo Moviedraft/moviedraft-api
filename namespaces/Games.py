@@ -675,6 +675,11 @@ class SideBet(Resource):
         if current_user.id != game.commissionerId:
             abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
 
+        previous_side_bet = SideBetModel.disable_previous_side_bet(game_id)
+
+        if not previous_side_bet:
+            abort(make_response(jsonify(message='Previous side bet for gameId: \'{}\' could not be disabled'.format(game_id)), 500))
+
         side_bet = SideBetModel.create_side_bet(game_id, args['movieId'], args['prizeInMillions'], args['closeDate'])
 
         if not side_bet:

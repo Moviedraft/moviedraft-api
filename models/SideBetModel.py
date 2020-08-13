@@ -1,6 +1,7 @@
 from utilities.Database import mongo
 from bson.objectid import ObjectId
 from utilities.DatetimeHelper import convert_to_utc
+import json
 
 class BetModel():
     def __init__(self, user_id, bet):
@@ -30,6 +31,25 @@ class SideBetModel():
             'winner': self.winner
         }
 
+    def update_side_bet(self):
+        betModels = [BetModel(user_id=bet.user_id, bet=bet.bet) for bet in self.bets]
+        jsonBets = json.dumps([bet.__dict__ for bet in betModels])
+
+        result = mongo.db.sidebets.update_one({'_id': ObjectId(self._id)},
+                                              {'$set':
+                                                   dict(game_id=ObjectId(self.game_id),
+                                                        movie_id=ObjectId(self.movie_id),
+                                                        prize_in_millions=self.prize_in_millions,
+                                                        close_date=convert_to_utc(self.close_date),
+                                                        bets=json.loads(jsonBets),
+                                                        winner=self.winner,
+                                                        current=self.current)})
+
+        if result.modified_count == 1:
+            return self.load_side_bet_by_id(self._id)
+
+        return None
+
     @classmethod
     def create_side_bet(cls, game_id, movie_id, prize_in_millions, close_date):
         side_bet_model = SideBetModel(id=ObjectId(),
@@ -48,6 +68,22 @@ class SideBetModel():
             return inserted_side_bet
 
         return None
+
+    @classmethod
+    def disable_previous_side_bet(cls, gameId):
+        current_side_bet = cls.load_side_bet_by_game_id(gameId)
+
+        if not current_side_bet:
+            return None
+
+        current_side_bet.current = False
+
+        updated_side_bet = current_side_bet.update_side_bet()
+
+        if not updated_side_bet:
+            return None
+
+        return updated_side_bet
 
     @classmethod
     def load_side_bet_by_id(cls, id):
