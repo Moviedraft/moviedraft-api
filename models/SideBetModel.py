@@ -16,7 +16,7 @@ class SideBetModel():
         self.close_date = close_date
         self.bets = bets
         self.winner = winner
-        self.current=current
+        self.current = current
 
     def serialize(self):
         bets = [{'userId': bet.user_id, 'bet': bet.bet} for bet in self.bets]
