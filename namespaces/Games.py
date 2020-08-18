@@ -24,6 +24,7 @@ from models.PlayerModel import PlayerModel
 from models.WeekendBoxOfficeModel import WeekendBoxOfficeModel
 from models.PollModel import PollModel
 from models.SideBetModel import SideBetModel
+from models.SideBetModel import BetModel
 from models.FlavorTextModel import FlavorTextModel
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
@@ -65,6 +66,10 @@ SideBetPostPayload = games_namespace.model('SideBetPostPayload', {
         'movieId': fields.String,
         'prizeInMillions': fields.Integer,
         'closeDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00')
+        })
+
+SideBetPatchPayload = games_namespace.model('SideBetPatchPayload', {
+        'bet': fields.Integer
         })
 
 games_namespace.model('GamePostResponse', {
@@ -687,6 +692,45 @@ class SideBet(Resource):
             abort(make_response(jsonify(message='Side bet could not be created.'), 500))
 
         return make_response(jsonify(sideBet=side_bet.serialize()), 200)
+
+    @jwt_required
+    @games_namespace.expect(SideBetPatchPayload)
+    @games_namespace.response(200, 'Success', games_namespace.models['SideBet'])
+    @games_namespace.response(401, 'Authentication Error')
+    @games_namespace.response(403, 'Forbidden')
+    @games_namespace.response(404, 'Not Found')
+    @games_namespace.response(500, 'Internal Server Error')
+    def patch(self, game_id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('bet', type=int, required=True)
+        args = parser.parse_args()
+
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
+
+        game = GameModel.load_game_by_id(game_id)
+
+        if not game:
+            abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(game_id)), 404))
+
+        if current_user.id not in game.playerIds and current_user.id != game.commissionerId:
+            abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
+
+        side_bet = SideBetModel.load_side_bet_by_game_id(game_id)
+
+        if not side_bet:
+            abort(make_response(jsonify(message='Side bet for gameID: \'{}\' could not be found.'.format(game_id)), 404))
+
+        if any(bet.user_id == current_user.id for bet in side_bet.bets):
+            abort(make_response(jsonify(message='UserId: \'{}\' has already placed a bid for this side bet.'.format(current_user.id)), 403))
+
+        side_bet.bets.append(BetModel(current_user.id, args['bet']))
+        updated_side_bet = side_bet.update_side_bet()
+
+        if not updated_side_bet:
+            abort(make_response(jsonify(message='Side bet could not be updated.'), 500))
+
+        return make_response(jsonify(sideBet=updated_side_bet.serialize()), 200)
 
 @games_namespace.route('/<string:gameId>/flavortext/<string:type>')
 class FlavorText(Resource):
