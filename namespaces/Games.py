@@ -678,7 +678,7 @@ class SideBet(Resource):
 
         previous_side_bet = SideBetModel.disable_previous_side_bet(game_id)
 
-        if not previous_side_bet:
+        if previous_side_bet and previous_side_bet.current == True:
             abort(make_response(jsonify(message='Previous side bet for gameId: \'{}\' could not be disabled'.format(game_id)), 500))
 
         side_bet = SideBetModel.create_side_bet(game_id, args['movieId'], args['prizeInMillions'], args['closeDate'])
