@@ -722,7 +722,7 @@ class SideBet(Resource):
             abort(make_response(jsonify(message='Side bet for gameID: \'{}\' could not be found.'.format(game_id)), 404))
 
         if any(bet.user_id == current_user.id for bet in side_bet.bets):
-            abort(make_response(jsonify(message='UserId: \'{}\' has already placed a bid for this side bet.'.format(current_user.id)), 403))
+            abort(make_response(jsonify(message='User: \'{}\' has already placed a bid for this side bet.'.format(current_user.userHandle)), 403))
 
         side_bet.bets.append(BetModel(current_user.id, args['bet']))
         updated_side_bet = side_bet.update_side_bet()
