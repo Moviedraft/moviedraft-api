@@ -130,7 +130,7 @@ games_namespace.model('Poll', {
         })
 
 games_namespace.model('Bet', {
-    'userId': fields.String,
+    'userHandle': fields.String,
     'bet': fields.Integer
 })
 
