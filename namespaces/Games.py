@@ -137,6 +137,7 @@ games_namespace.model('Bet', {
 games_namespace.model('SideBet', { 'id': fields.String,
                                    'gameId': fields.String,
                                    'movieId': fields.String,
+                                   'movieTitle': fields.String,
                                    'prizeInMillions': fields.Integer,
                                    'closeDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
                                    'bets': fields.List(fields.Nested(games_namespace.models['Bet'])),

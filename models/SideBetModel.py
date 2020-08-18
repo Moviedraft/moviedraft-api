@@ -1,6 +1,7 @@
 from utilities.Database import mongo
 from bson.objectid import ObjectId
 from utilities.DatetimeHelper import convert_to_utc
+from models.MovieModel import MovieModel
 import json
 
 class BetModel():
@@ -21,10 +22,13 @@ class SideBetModel():
 
     def serialize(self):
         bets = [{'userId': bet.user_id, 'bet': bet.bet} for bet in self.bets]
+        movie_title = getattr(MovieModel.load_movie_by_id(self.movie_id), 'title', None)
 
         return {
             'id': self._id,
+            'gameId': self.game_id,
             'movieId': self.movie_id,
+            'movieTitle': movie_title or '',
             'prizeInMillions': self.prize_in_millions,
             'closeDate': self.close_date,
             'bets': bets,
