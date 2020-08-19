@@ -654,6 +654,9 @@ class SideBet(Resource):
             abort(make_response(jsonify(message='Side bet could not be found for game ID: \'{}\'.'
                                         .format(game_id)), 404))
 
+        if not any(bet.user_id == current_user.id for bet in side_bet.bets):
+            side_bet.bets = []
+
         return make_response(jsonify(sideBet=side_bet.serialize()), 200)
 
     @jwt_required
