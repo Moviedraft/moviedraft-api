@@ -13,7 +13,7 @@ from bson.objectid import ObjectId
 from email.utils import parseaddr
 from utilities.Mailer import Emailer
 from utilities.Executor import executor
-from utilities.DatetimeHelper import convert_to_utc, get_current_time
+from utilities.DatetimeHelper import convert_to_utc, get_current_time, string_format_date
 from models.GameModel import GameModel
 from models.RuleModel import RuleModel
 from models.MovieModel import MovieModel
@@ -726,6 +726,10 @@ class SideBet(Resource):
 
         if any(bet.user_id == current_user.id for bet in side_bet.bets):
             abort(make_response(jsonify(message='User: \'{}\' has already placed a bid for this side bet.'.format(current_user.userHandle)), 403))
+
+        if arrow.utcnow() > arrow.get(side_bet.close_date):
+            abort(make_response(jsonify(
+                message='The close date for this side bet has passed. Close date was: \'{}\''.format(string_format_date(side_bet.close_date))), 403))
 
         side_bet.bets.append(BetModel(current_user.id, args['bet']))
         updated_side_bet = side_bet.update_side_bet()
