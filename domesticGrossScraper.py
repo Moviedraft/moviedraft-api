@@ -38,11 +38,17 @@ for movie in movies:
     if movie['releaseDate'] >= datetime.today():
         print('Skipping \'{}\': not released.'.format(movie['title']))
         continue
+        
     driver.get(movie['url'])
     domesticGrossTable = driver.find_element_by_id('movie_finances')
     domesticGross = domesticGrossTable.find_elements_by_class_name('data')[0].text
-    formattedDomesticGross = int(domesticGross[1:].replace(',',''))
-    
+
+    try:
+        formattedDomesticGross = int(domesticGross[1:].replace(',',''))
+    except ValueError:
+        print('Skipping \'{}\'. Domestic gross not a valid integer: \'{}\''.format(movie['title'], domesticGross[1:].replace(',','')))
+        continue
+
     db.movies.update_one({'_id': movie['_id']},  
                           {'$set': {'domesticGross': formattedDomesticGross, 
                                     'lastUpdated': datetime.strptime(datetime.utcnow().isoformat() , '%Y-%m-%dT%H:%M:%S.%f') }})
