@@ -23,6 +23,7 @@ class SideBetModel():
 
     def serialize(self):
         bets = [{'userHandle': getattr(UserModel.load_user_by_id(bet.user_id), 'userHandle', None) or '', 'bet': bet.bet} for bet in self.bets]
+        winner = getattr(UserModel.load_user_by_id(self.winner), 'userHandle', None)
         movie_title = getattr(MovieModel.load_movie_by_id(self.movie_id), 'title', None)
 
         return {
@@ -33,12 +34,13 @@ class SideBetModel():
             'prizeInMillions': self.prize_in_millions,
             'closeDate': self.close_date,
             'bets': bets,
-            'winner': self.winner
+            'winner': winner
         }
 
     def update_side_bet(self):
         betModels = [BetModel(user_id=bet.user_id, bet=bet.bet) for bet in self.bets]
         jsonBets = json.dumps([bet.__dict__ for bet in betModels])
+        winner = ObjectId(self.winner) if ObjectId.is_valid(self.winner) else None
 
         result = mongo.db.sidebets.update_one({'_id': ObjectId(self._id)},
                                               {'$set':
@@ -47,7 +49,7 @@ class SideBetModel():
                                                         prize_in_millions=self.prize_in_millions,
                                                         close_date=convert_to_utc(self.close_date),
                                                         bets=json.loads(jsonBets),
-                                                        winner=self.winner,
+                                                        winner=winner,
                                                         current=self.current)})
 
         if result.modified_count == 1:
@@ -63,7 +65,7 @@ class SideBetModel():
                                       prize_in_millions=prize_in_millions,
                                       close_date=convert_to_utc(close_date),
                                       bets=[],
-                                      winner='',
+                                      winner=None,
                                       current=True)
 
         result = mongo.db.sidebets.insert_one(side_bet_model.__dict__)
@@ -120,6 +122,6 @@ class SideBetModel():
                             prize_in_millions=side_bet['prize_in_millions'],
                             close_date=side_bet['close_date'],
                             bets=bets,
-                            winner=side_bet['winner'],
+                            winner=str(side_bet['winner']),
                             current=side_bet['current'])
 
