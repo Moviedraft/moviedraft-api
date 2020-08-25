@@ -99,14 +99,6 @@ class SideBetModel():
         return side_bets[0]
 
     @classmethod
-    def load_side_bet_by_game_id(cls, game_id):
-        if not ObjectId.is_valid(game_id):
-            return None
-        queryDict = {'game_id': ObjectId(game_id), 'status': SideBetStatus.current.value}
-        side_bets = cls.load_side_bets(queryDict)
-        return side_bets[0]
-
-    @classmethod
     def load_side_bet_by_game_id_and_status(cls, game_id, status):
         if not ObjectId.is_valid(game_id):
             return None

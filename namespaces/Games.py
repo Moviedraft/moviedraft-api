@@ -5,7 +5,7 @@ Created on Mon Nov 25 20:16:39 2019
 @author: Jason
 """
 
-from flask import abort, make_response, jsonify, render_template
+from flask import request, abort, make_response, jsonify, render_template
 from flask import current_app as app
 from flask_restplus import Namespace, Resource, fields, reqparse
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -635,11 +635,15 @@ class Poll(Resource):
 class SideBet(Resource):
     @jwt_required
     @games_namespace.response(200, 'Success', games_namespace.models['SideBet'])
+    @games_namespace.response(400, 'Bad Request')
     @games_namespace.response(401, 'Authentication Error')
     @games_namespace.response(403, 'Forbidden')
     @games_namespace.response(404, 'Not Found')
     @games_namespace.response(500, 'Internal Server Error')
+    @games_namespace.doc(params={'status': 'current, previous'})
     def get(self, game_id):
+        status = request.args.get('status')
+
         userIdentity = get_jwt_identity()
         current_user = UserModel.load_user_by_id(userIdentity['id'])
 
@@ -651,11 +655,15 @@ class SideBet(Resource):
         if current_user.id not in game.playerIds and current_user.id != game.commissionerId:
             abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
 
-        side_bet = SideBetModel.load_side_bet_by_game_id(game_id)
+        if not SideBetStatus.has_value(status):
+            abort(make_response(jsonify(message='\'{}\' is not a valid query parameter value for \'status\''
+                                        .format(status)), 400))
+
+        side_bet = next(iter(SideBetModel.load_side_bet_by_game_id_and_status(game_id, SideBetStatus[status].value)), None)
 
         if not side_bet:
-            abort(make_response(jsonify(message='Side bet could not be found for game ID: \'{}\'.'
-                                        .format(game_id)), 404))
+            abort(make_response(jsonify(message='\'{}\' side bet could not be found for game ID: \'{}\'.'
+                                        .format(status, game_id)), 404))
 
         if not any(bet.user_id == current_user.id for bet in side_bet.bets):
             side_bet.bets = []
@@ -724,7 +732,7 @@ class SideBet(Resource):
         if current_user.id not in game.playerIds and current_user.id != game.commissionerId:
             abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
 
-        side_bet = SideBetModel.load_side_bet_by_game_id(game_id)
+        side_bet = next(iter(SideBetModel.load_side_bet_by_game_id_and_status(game_id, SideBetStatus.current.value)), None)
 
         if not side_bet:
             abort(make_response(jsonify(message='Side bet for gameID: \'{}\' could not be found.'.format(game_id)), 404))
