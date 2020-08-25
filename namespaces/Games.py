@@ -26,8 +26,10 @@ from models.PollModel import PollModel
 from models.SideBetModel import SideBetModel
 from models.SideBetModel import BetModel
 from models.FlavorTextModel import FlavorTextModel
+from enums.SideBetStatus import SideBetStatus
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
+from pymongo.errors import WriteError
 import arrow
 
 games_namespace = Namespace('games', description='Draft league game data.')
@@ -146,7 +148,8 @@ games_namespace.model('SideBet', { 'id': fields.String,
                                    'prizeInMillions': fields.Integer,
                                    'closeDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
                                    'bets': fields.List(fields.Nested(games_namespace.models['Bet'])),
-                                   'winner': fields.String
+                                   'winner': fields.String,
+                                   'status': fields.String
                                    })
 
 games_namespace.model('FlavorText', {
@@ -684,10 +687,12 @@ class SideBet(Resource):
         if current_user.id != game.commissionerId:
             abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
 
-        previous_side_bet = SideBetModel.disable_previous_side_bet(game_id)
-
-        if previous_side_bet and previous_side_bet.current == True:
-            abort(make_response(jsonify(message='Previous side bet for gameId: \'{}\' could not be disabled'.format(game_id)), 500))
+        try:
+            SideBetModel.change_side_bet_status(game_id, SideBetStatus.previous.value, SideBetStatus.old.value)
+            SideBetModel.change_side_bet_status(game_id, SideBetStatus.current.value, SideBetStatus.previous.value)
+        except WriteError:
+            abort(make_response(
+                jsonify(message='Previous side bet statuses for gameId: \'{}\' could not be changed'.format(game_id)), 500))
 
         side_bet = SideBetModel.create_side_bet(game_id, args['movieId'], args['prizeInMillions'], args['closeDate'])
 
