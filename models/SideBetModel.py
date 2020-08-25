@@ -3,6 +3,8 @@ from bson.objectid import ObjectId
 from utilities.DatetimeHelper import convert_to_utc
 from models.MovieModel import MovieModel
 from models.UserModel import UserModel
+from enums.SideBetStatus import SideBetStatus
+from pymongo.errors import WriteError
 import json
 
 class BetModel():
@@ -11,7 +13,7 @@ class BetModel():
         self.bet = bet
 
 class SideBetModel():
-    def __init__(self, id, game_id, movie_id, prize_in_millions, close_date, bets, winner, current):
+    def __init__(self, id, game_id, movie_id, prize_in_millions, close_date, bets, winner, status):
         self._id = id
         self.game_id = game_id
         self.movie_id = movie_id
@@ -19,7 +21,7 @@ class SideBetModel():
         self.close_date = close_date
         self.bets = bets
         self.winner = winner
-        self.current = current
+        self.status = status
 
     def serialize(self):
         bets = [{'userHandle': getattr(UserModel.load_user_by_id(bet.user_id), 'userHandle', None) or '', 'bet': bet.bet} for bet in self.bets]
@@ -34,7 +36,8 @@ class SideBetModel():
             'prizeInMillions': self.prize_in_millions,
             'closeDate': self.close_date,
             'bets': bets,
-            'winner': winner
+            'winner': winner,
+            'status': SideBetStatus(self.status).name
         }
 
     def update_side_bet(self):
@@ -50,7 +53,7 @@ class SideBetModel():
                                                         close_date=convert_to_utc(self.close_date),
                                                         bets=json.loads(jsonBets),
                                                         winner=winner,
-                                                        current=self.current)})
+                                                        status=self.status)})
 
         if result.modified_count == 1:
             return self.load_side_bet_by_id(self._id)
@@ -66,7 +69,7 @@ class SideBetModel():
                                       close_date=convert_to_utc(close_date),
                                       bets=[],
                                       winner=None,
-                                      current=True)
+                                      status=SideBetStatus.current.value)
 
         result = mongo.db.sidebets.insert_one(side_bet_model.__dict__)
 
@@ -77,51 +80,55 @@ class SideBetModel():
         return None
 
     @classmethod
-    def disable_previous_side_bet(cls, gameId):
-        current_side_bet = cls.load_side_bet_by_game_id(gameId)
+    def change_side_bet_status(cls, gameId, old_status, new_status):
+        side_bets = cls.load_side_bet_by_game_id_and_status(gameId, old_status)
 
-        if not current_side_bet:
-            return None
+        for side_bet in side_bets:
+            side_bet.status = new_status
+            updated_side_bet = side_bet.update_side_bet()
 
-        current_side_bet.current = False
-
-        updated_side_bet = current_side_bet.update_side_bet()
-
-        if not updated_side_bet:
-            return None
-
-        return updated_side_bet
+            if not updated_side_bet:
+                raise WriteError('Unable to update side bet status.')
 
     @classmethod
     def load_side_bet_by_id(cls, id):
         if not ObjectId.is_valid(id):
             return None
         queryDict = {'_id': ObjectId(id)}
-        side_bet = cls.load_side_bet(queryDict)
-        return side_bet
+        side_bets = cls.load_side_bets(queryDict)
+        return side_bets[0]
 
     @classmethod
     def load_side_bet_by_game_id(cls, game_id):
         if not ObjectId.is_valid(game_id):
             return None
-        queryDict = {'game_id': ObjectId(game_id), 'current': True}
-        side_bet = cls.load_side_bet(queryDict)
-        return side_bet
+        queryDict = {'game_id': ObjectId(game_id), 'status': SideBetStatus.current.value}
+        side_bets = cls.load_side_bets(queryDict)
+        return side_bets[0]
 
     @classmethod
-    def load_side_bet(cls, queryDict):
-        side_bet = mongo.db.sidebets.find_one(queryDict)
-        if not side_bet:
+    def load_side_bet_by_game_id_and_status(cls, game_id, status):
+        if not ObjectId.is_valid(game_id):
             return None
+        queryDict = {'game_id': ObjectId(game_id), 'status': status}
+        side_bets = cls.load_side_bets(queryDict)
+        return side_bets
 
-        bets = [BetModel(user_id=bet['user_id'], bet=bet['bet']) for bet in side_bet['bets']]
+    @classmethod
+    def load_side_bets(cls, queryDict):
+        db_side_bets = mongo.db.sidebets.find(queryDict)
+        side_bets = []
+        for side_bet in db_side_bets:
+            bets = [BetModel(user_id=bet['user_id'], bet=bet['bet']) for bet in side_bet['bets']]
 
-        return SideBetModel(id=str(side_bet['_id']),
-                            game_id=str(side_bet['game_id']),
-                            movie_id=str(side_bet['movie_id']),
-                            prize_in_millions=side_bet['prize_in_millions'],
-                            close_date=side_bet['close_date'],
-                            bets=bets,
-                            winner=str(side_bet['winner']),
-                            current=side_bet['current'])
+            side_bet_model = SideBetModel(id=str(side_bet['_id']),
+                                          game_id=str(side_bet['game_id']),
+                                          movie_id=str(side_bet['movie_id']),
+                                          prize_in_millions=side_bet['prize_in_millions'],
+                                          close_date=side_bet['close_date'],
+                                          bets=bets,
+                                          winner=str(side_bet['winner']),
+                                          status=side_bet['status'])
+            side_bets.append(side_bet_model)
 
+        return side_bets
