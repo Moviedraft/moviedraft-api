@@ -148,6 +148,7 @@ games_namespace.model('SideBet', { 'id': fields.String,
                                    'prizeInMillions': fields.Integer,
                                    'closeDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
                                    'bets': fields.List(fields.Nested(games_namespace.models['Bet'])),
+                                   'weekendGross': fields.Integer,
                                    'winner': fields.String,
                                    'status': fields.String
                                    })

@@ -13,7 +13,7 @@ class BetModel():
         self.bet = bet
 
 class SideBetModel():
-    def __init__(self, id, game_id, movie_id, prize_in_millions, close_date, bets, winner, status):
+    def __init__(self, id, game_id, movie_id, prize_in_millions, close_date, bets, winner, weekend_gross, status):
         self._id = id
         self.game_id = game_id
         self.movie_id = movie_id
@@ -21,6 +21,7 @@ class SideBetModel():
         self.close_date = close_date
         self.bets = bets
         self.winner = winner
+        self.weekend_gross = weekend_gross
         self.status = status
 
     def serialize(self):
@@ -36,6 +37,7 @@ class SideBetModel():
             'prizeInMillions': self.prize_in_millions,
             'closeDate': self.close_date,
             'bets': bets,
+            'weekendGross': self.weekend_gross,
             'winner': winner,
             'status': SideBetStatus(self.status).name
         }
@@ -53,6 +55,7 @@ class SideBetModel():
                                                         close_date=convert_to_utc(self.close_date),
                                                         bets=json.loads(jsonBets),
                                                         winner=winner,
+                                                        weekend_gross=self.weekend_gross,
                                                         status=self.status)})
 
         if result.modified_count == 1:
@@ -69,6 +72,7 @@ class SideBetModel():
                                       close_date=convert_to_utc(close_date),
                                       bets=[],
                                       winner=None,
+                                      weekend_gross=0,
                                       status=SideBetStatus.current.value)
 
         result = mongo.db.sidebets.insert_one(side_bet_model.__dict__)
@@ -120,6 +124,7 @@ class SideBetModel():
                                           close_date=side_bet['close_date'],
                                           bets=bets,
                                           winner=str(side_bet['winner']),
+                                          weekend_gross=side_bet['weekend_gross'],
                                           status=side_bet['status'])
             side_bets.append(side_bet_model)
 
