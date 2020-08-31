@@ -6,8 +6,11 @@ Created on Tue Apr 14 11:12:31 2020
 """
 
 from utilities.Database import mongo
+from utilities.DatetimeHelper import get_most_recent_day
+from enums.DaysOfWeek import DaysOfWeek
 from bson.objectid import ObjectId
 import json
+import arrow
 
 class ChoiceModel():
     def __init__(self, displayText, votes):
@@ -110,7 +113,10 @@ class PollModel():
     
     @classmethod
     def load_poll(cls, queryDict):
-        poll = mongo.db.polls.find_one(queryDict)
+        weekendEnding = get_most_recent_day(DaysOfWeek.Monday.value)
+        recent_monday_id = ObjectId.from_datetime(arrow.get(weekendEnding))
+        poll = mongo.db.polls.find_one({'$and': [{'_id': {'$gte': recent_monday_id}}, queryDict]})
+        
         if not poll:
             return None
         
