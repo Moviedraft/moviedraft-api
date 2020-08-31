@@ -18,22 +18,25 @@ class ChoiceModel():
         self.votes = votes
 
 class PollModel():
-    def __init__(self, id, gameId, question, choices, current):
+    def __init__(self, id, gameId, question, choices, current, voters):
         self._id = id
         self.gameId = gameId
         self.question = question
         self.choices = choices
         self.current = current
+        self.voters = voters
     
     def serialize(self):
         choices = [{'displayText': choice.displayText, 'votes': choice.votes} for choice in self.choices]
-        
+        voters = [str(voter) for voter in self.voters]
+
         return {
                 'id': self._id,
                 'gameId': self.gameId,
                 'question': self.question,
                 'choices': choices,
-                'current': self.current
+                'current': self.current,
+                'voters': voters
                 }
     
     def update_poll(self):
@@ -44,16 +47,22 @@ class PollModel():
                                            {'$set': {'gameId': ObjectId(self.gameId),
                                                      'question': self.question,
                                                      'choices': json.loads(jsonChoices),
-                                                     'current': self.current}})
+                                                     'current': self.current,
+                                                     'voters': self.voters}})
         
         if result.modified_count == 1:
             return self.load_poll_by_id(self._id)
         
         return None
     
-    def update_vote(self, displayText, vote):
+    def update_vote(self, displayText, vote, user_id):
+        if not ObjectId.is_valid(user_id):
+            return None
+
+        self.voters.append(ObjectId(user_id))
+
         result = mongo.db.polls.update_one({'_id': ObjectId(self._id), 'choices.displayText': displayText}, 
-                                           { '$set': { 'choices.$.votes': vote }})
+                                           { '$set': { 'choices.$.votes': vote, 'voters': self.voters }})
         
         if result.modified_count == 1:
             return self.load_poll_by_id(self._id)
@@ -69,7 +78,8 @@ class PollModel():
                               gameId=ObjectId(gameId), 
                               question=question, 
                               choices=json.loads(jsonChoices), 
-                              current=True)
+                              current=True,
+                              voters=[])
 
         result = mongo.db.polls.insert_one(pollModel.__dict__)
 
@@ -126,6 +136,7 @@ class PollModel():
                          gameId = str(poll['gameId']),
                          question = poll['question'],
                          choices = choices,
-                         current = poll['current'])
+                         current = poll['current'],
+                         voters=poll['voters'])
     
         

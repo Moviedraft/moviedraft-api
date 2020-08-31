@@ -573,25 +573,34 @@ class Poll(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('vote', required=True)
         args = parser.parse_args()
-        
+
+        userIdentity = get_jwt_identity()
+        current_user = UserModel.load_user_by_id(userIdentity['id'])
+
         game = GameModel.load_game_by_id(gameId)
         
         if not game:
             abort(make_response(jsonify(message='Game ID: \'{}\' could not be found.'.format(gameId)), 404))
         
+        if current_user.id not in game.playerIds and current_user.id != game.commissionerId:
+            abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
+
         poll = PollModel.load_poll_by_gameId(gameId)
         updatedPoll = None
         
         if not poll:
             abort(make_response(jsonify(message='Poll could not be found for game ID: \'{}\'.'.format(gameId)), 404))
-        
+
+        if ObjectId(current_user.id) in poll.voters:
+            abort(make_response(jsonify(message='user ID: \'{}\' has already voted in poll.'.format(current_user.id)), 400))
+
         if args['vote']:
             choiceToUpdate = next((x for x in poll.choices if x.displayText == args['vote']), None)
         
             if not choiceToUpdate:
                 abort(make_response(jsonify(message='Poll choice: \'{}\' is not valid.'.format(args['vote'])), 400))
             
-            updatedPoll = poll.update_vote(choiceToUpdate.displayText, choiceToUpdate.votes + 1)
+            updatedPoll = poll.update_vote(choiceToUpdate.displayText, choiceToUpdate.votes + 1, current_user.id)
         
         responsePoll = updatedPoll or poll
         
