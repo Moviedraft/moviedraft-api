@@ -1,6 +1,7 @@
 from utilities.Database import mongo
 from bson.objectid import ObjectId
-from utilities.DatetimeHelper import get_most_recent_monday
+from utilities.DatetimeHelper import get_most_recent_day
+from enums.DaysOfWeek import DaysOfWeek
 import arrow
 
 class FlavorTextModel():
@@ -65,7 +66,7 @@ class FlavorTextModel():
 
     @classmethod
     def load_flavor_text(cls, queryDict):
-        weekendEnding = get_most_recent_monday()
+        weekendEnding = get_most_recent_day(DaysOfWeek.Monday.value)
         recent_monday_id = ObjectId.from_datetime(arrow.get(weekendEnding))
         flavorText = mongo.db.flavortext.find_one({'$and': [{'_id': {'$gte': recent_monday_id}}, queryDict]})
         
