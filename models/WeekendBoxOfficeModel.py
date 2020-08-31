@@ -6,9 +6,10 @@ Created on Tue Apr  7 12:02:50 2020
 """
 
 from utilities.Database import mongo
-from utilities.DatetimeHelper import convert_to_utc, get_most_recent_monday
+from utilities.DatetimeHelper import convert_to_utc, get_most_recent_day
 from models.MovieModel import MovieModel
 from models.BidModel import BidModel
+from enums.DaysOfWeek import DaysOfWeek
 import arrow
 
 class WeekendBoxOfficeModel():
@@ -34,7 +35,7 @@ class WeekendBoxOfficeModel():
         
     @classmethod
     def load_weekend_box_office(cls, gameId):
-        weekendEnding = get_most_recent_monday()
+        weekendEnding = get_most_recent_day(DaysOfWeek.Monday.value)
         
         weekendEndingFilterCondition = { '$lte': convert_to_utc(arrow.get(weekendEnding).shift(days=2)),
                                       '$gte': convert_to_utc(weekendEnding) }

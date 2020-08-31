@@ -17,9 +17,14 @@ def string_format_date(date):
     formattedDate = arrow.get(date).format('YYYY-MM-DDTHH:mm:ss.SSSZ').replace('+0000', 'Z')
     return formattedDate
 
-def get_most_recent_monday():
-    today = datetime.today()
-    monday = today - timedelta(days=today.weekday())
+def get_most_recent_day(target_day):
+    today = datetime.now().weekday()
+
+    if today <= target_day:
+        monday = datetime.now() - timedelta(today - target_day)
+    else:
+        monday = datetime.now() - timedelta(weeks=1) + timedelta(target_day - today)
+
     return arrow.get(monday).format('YYYY-MM-DD')
 
 def get_current_time():
