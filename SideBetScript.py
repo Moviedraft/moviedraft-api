@@ -6,12 +6,18 @@
 
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from enum import Enum
 import sys
+
+class SideBetStatus(Enum):
+    current = 1
+    previous = 2
+    old = 3
 
 client = MongoClient(sys.argv[1])
 db = client.get_database(sys.argv[2])
 
-side_bets = db.sidebets.find({'current': True})
+side_bets = db.sidebets.find({'status': SideBetStatus.current.value})
 side_bets_list = [side_bet for side_bet in side_bets]
 
 for side_bet in side_bets_list:
@@ -30,6 +36,6 @@ for side_bet in side_bets_list:
 
     db.sidebets.update_one({'_id': side_bet['_id']},
                            {'$set': {'winner': ObjectId(winning_bet['user_id']),
-                                     'current': False }})
+                                     'status': SideBetStatus.previous.value }})
 
     print('Updated side bet ID: \'{}\''.format((side_bet['_id'])))
