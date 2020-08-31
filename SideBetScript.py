@@ -17,6 +17,15 @@ class SideBetStatus(Enum):
 client = MongoClient(sys.argv[1])
 db = client.get_database(sys.argv[2])
 
+previous_side_bets = db.sidebets.find({'status': SideBetStatus.previous.value})
+previous_side_bets_list = [side_bet for side_bet in previous_side_bets]
+
+for previous_side_bet in previous_side_bets_list:
+    db.sidebets.update_one({'_id': previous_side_bet['_id']},
+                           {'$set': {'status': SideBetStatus.old.value}})
+
+    print('Updated status of previous side bet ID: \'{}\' to \'old\''.format(previous_side_bet['_id']))
+    
 side_bets = db.sidebets.find({'status': SideBetStatus.current.value})
 side_bets_list = [side_bet for side_bet in side_bets]
 
