@@ -18,14 +18,14 @@ def string_format_date(date):
     return formattedDate
 
 def get_most_recent_day(target_day):
-    today = datetime.now().weekday()
+    today = datetime.utcnow().weekday()
 
-    if today <= target_day:
-        monday = datetime.now() - timedelta(today - target_day)
+    if today >= target_day:
+        recent_day = datetime.utcnow() - timedelta(today - target_day)
     else:
-        monday = datetime.now() - timedelta(weeks=1) + timedelta(target_day - today)
+        recent_day = datetime.utcnow() - timedelta(weeks=1) + timedelta(target_day - today)
 
-    return arrow.get(monday).format('YYYY-MM-DD')
+    return arrow.get(recent_day).format('YYYY-MM-DD')
 
 def get_current_time():
     formattedDatetime = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSZ').replace('+0000', 'Z')
