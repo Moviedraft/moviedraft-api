@@ -103,7 +103,7 @@ games_namespace.model('Player', {
         'totalGross': fields.Integer,
         'moviesPurchasedTitles': fields.List(fields.String),
         'value': fields.Integer,
-        'bonus': fields.Integer
+        'bonusInMillions': fields.Integer
         })
 
 
