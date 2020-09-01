@@ -12,14 +12,14 @@ from models.RuleModel import RuleModel
 from models.SideBetModel import SideBetModel
 
 class PlayerModel():
-    def __init__(self, id, userHandle, totalSpent, totalGross, movies, value, bonus):
+    def __init__(self, id, userHandle, totalSpent, totalGross, movies, value, bonus_in_millions):
         self.id = id
         self.userHandle = userHandle
         self.totalSpent = totalSpent
         self.totalGross = totalGross
         self.movies = movies
         self.value = value
-        self.bonus = bonus
+        self.bonus_in_millions = bonus_in_millions
     
     def serialize(self):
         return {
@@ -29,7 +29,7 @@ class PlayerModel():
                 'totalGross': self.totalGross,
                 'movies': self.movies,
                 'value': self.value,
-                'bonus': self.bonus
+                'bonusInMillions': self.bonus_in_millions
                 }
         
     @classmethod
@@ -53,7 +53,7 @@ class PlayerModel():
         value = round(totalGross / totalSpent) if totalSpent else 0
 
         side_bets_won = SideBetModel.load_side_bet_by_game_id_and_winner_id(game_id, playerId)
-        bonus = sum(side_bet.prize_in_millions for side_bet in side_bets_won)
+        bonus_in_millions = sum(side_bet.prize_in_millions for side_bet in side_bets_won)
 
         return PlayerModel(
                 id=playerId,
@@ -62,7 +62,7 @@ class PlayerModel():
                 totalGross=totalGross,
                 movies=movies,
                 value=value,
-                bonus=bonus
+                bonus_in_millions=bonus_in_millions
                 )
 
         
