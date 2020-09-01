@@ -9,15 +9,17 @@ from utilities.DatetimeHelper import string_format_date
 from models.MovieModel import MovieModel
 from models.UserModel import UserModel
 from models.RuleModel import RuleModel
+from models.SideBetModel import SideBetModel
 
 class PlayerModel():
-    def __init__(self, id, userHandle, totalSpent, totalGross, movies, value):
+    def __init__(self, id, userHandle, totalSpent, totalGross, movies, value, bonus):
         self.id = id
         self.userHandle = userHandle
         self.totalSpent = totalSpent
         self.totalGross = totalGross
         self.movies = movies
         self.value = value
+        self.bonus = bonus
     
     def serialize(self):
         return {
@@ -26,11 +28,12 @@ class PlayerModel():
                 'totalSpent': self.totalSpent,
                 'totalGross': self.totalGross,
                 'movies': self.movies,
-                'value': self.value
+                'value': self.value,
+                'bonus': self.bonus
                 }
         
     @classmethod
-    def loadPlayer(cls, playerId, gameBids, rules):
+    def loadPlayer(cls, game_id, playerId, gameBids, rules):
         player = UserModel.load_user_by_id(playerId)
         if not player:
             return None
@@ -49,13 +52,17 @@ class PlayerModel():
         
         value = round(totalGross / totalSpent) if totalSpent else 0
 
+        side_bets_won = SideBetModel.load_side_bet_by_game_id_and_winner_id(game_id, playerId)
+        bonus = sum(side_bet.prize_in_millions for side_bet in side_bets_won)
+
         return PlayerModel(
                 id=playerId,
                 userHandle=player.userHandle,
                 totalSpent=totalSpent,
                 totalGross=totalGross,
                 movies=movies,
-                value=value
+                value=value,
+                bonus=bonus
                 )
 
         

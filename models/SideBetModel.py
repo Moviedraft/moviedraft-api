@@ -111,6 +111,14 @@ class SideBetModel():
         return side_bets
 
     @classmethod
+    def load_side_bet_by_game_id_and_winner_id(cls, game_id, winner_id):
+        if not ObjectId.is_valid(game_id) or not ObjectId.is_valid(winner_id):
+            return None
+        queryDict = {'game_id': ObjectId(game_id), 'winner': ObjectId(winner_id)}
+        side_bets = cls.load_side_bets(queryDict)
+        return side_bets
+
+    @classmethod
     def load_side_bets(cls, queryDict):
         db_side_bets = mongo.db.sidebets.find(queryDict)
         side_bets = []
