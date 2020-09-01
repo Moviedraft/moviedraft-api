@@ -102,7 +102,8 @@ games_namespace.model('Player', {
         'totalSpent': fields.Integer,
         'totalGross': fields.Integer,
         'moviesPurchasedTitles': fields.List(fields.String),
-        'value': fields.Integer
+        'value': fields.Integer,
+        'bonus': fields.Integer
         })
 
 
@@ -133,7 +134,8 @@ games_namespace.model('Poll', {
         'id': fields.String,
         'gameId': fields.String,
         'question': fields.String,
-        'choices': fields.List(fields.Nested(games_namespace.models['PollChoice']))
+        'choices': fields.List(fields.Nested(games_namespace.models['PollChoice'])),
+        'voters': fields.List(fields.String)
         })
 
 games_namespace.model('Bet', {
@@ -513,11 +515,11 @@ class GamePlayerRankings(Resource):
             
         players = []
         
-        commissioner = PlayerModel.loadPlayer(game.commissionerId, gameBids, game.rules)
+        commissioner = PlayerModel.loadPlayer(game._id, game.commissionerId, gameBids, game.rules)
         players.append(commissioner)
 
         for id in game.playerIds:
-            player = PlayerModel.loadPlayer(id, gameBids, game.rules)
+            player = PlayerModel.loadPlayer(game._id, id, gameBids, game.rules)
             if player:
                 playerJoined = UserGameModel.load_user_game_by_game_id_and_user_id(game._id, player.id).joined
                 if playerJoined:
