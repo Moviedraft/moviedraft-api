@@ -13,7 +13,7 @@ from bson.objectid import ObjectId
 from email.utils import parseaddr
 from utilities.Mailer import Emailer
 from utilities.Executor import executor
-from utilities.DatetimeHelper import convert_to_utc, get_current_time, string_format_date
+from utilities.DatetimeHelper import convert_to_utc, get_current_time, string_format_date, get_most_recent_day
 from models.GameModel import GameModel
 from models.RuleModel import RuleModel
 from models.MovieModel import MovieModel
@@ -27,6 +27,7 @@ from models.SideBetModel import SideBetModel
 from models.SideBetModel import BetModel
 from models.FlavorTextModel import FlavorTextModel
 from enums.SideBetStatus import SideBetStatus
+from enums.DaysOfWeek import DaysOfWeek
 from namespaces.Movies import movies_namespace
 from namespaces.Rules import rules_namespace
 from pymongo.errors import WriteError
@@ -708,13 +709,28 @@ class SideBet(Resource):
             abort(make_response(jsonify(message='You are not authorized to access this resource.'), 403))
 
         try:
-            SideBetModel.change_side_bet_status(game_id, SideBetStatus.previous.value, SideBetStatus.old.value)
-            SideBetModel.change_side_bet_status(game_id, SideBetStatus.current.value, SideBetStatus.previous.value)
-        except WriteError:
-            abort(make_response(
-                jsonify(message='Previous side bet statuses for gameId: \'{}\' could not be changed'.format(game_id)), 500))
+            current_side_bet = SideBetModel.load_side_bet_by_game_id_and_status(game._id, SideBetStatus.current.value)[0]
+        except IndexError:
+            current_side_bet = None
 
-        side_bet = SideBetModel.create_side_bet(game_id, args['movieId'], args['prizeInMillions'], args['closeDate'])
+        if current_side_bet:
+            if arrow.utcnow() <= arrow.get(current_side_bet.close_date):
+                current_side_bet.movie_id = ObjectId(args['movieId'])
+                current_side_bet.prize_in_millions = args['prizeInMillions']
+                current_side_bet.close_date = convert_to_utc(args['closeDate'])
+                side_bet = current_side_bet.update_side_bet()
+            else:
+                try:
+                    SideBetModel.change_side_bet_status(game_id, SideBetStatus.previous.value, SideBetStatus.old.value)
+                    SideBetModel.change_side_bet_status(game_id, SideBetStatus.current.value, SideBetStatus.previous.value)
+                    side_bet = SideBetModel.create_side_bet(game_id, args['movieId'], args['prizeInMillions'], args['closeDate'])
+                except WriteError:
+                    abort(make_response(
+                        jsonify(
+                            message='Previous side bet statuses for gameId: \'{}\' could not be changed'.format(game_id)),
+                        500))
+        else:
+            side_bet = SideBetModel.create_side_bet(game_id, args['movieId'], args['prizeInMillions'], args['closeDate'])
 
         if not side_bet:
             abort(make_response(jsonify(message='Side bet could not be created.'), 500))
