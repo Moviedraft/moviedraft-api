@@ -53,7 +53,9 @@ class GameModel():
                                     'auctionComplete': self.auctionComplete,
                                     'auctionTimeIncrement': self.auctionTimeIncrement
                                     })
-        updatedGame = GameModel.load_game_by_name(self.gameName)
+
+        updatedGame = GameModel.load_game_by_id(self._id)
+
         return updatedGame
     
     @classmethod
@@ -64,12 +66,6 @@ class GameModel():
         game = cls.load_game(queryDict)  
         return game
 
-    @classmethod
-    def load_game_by_name(cls, name):
-        queryDict = {'gameNameLowerCase': name.lower()}
-        game = cls.load_game(queryDict)  
-        return game
-    
     @classmethod
     def load_games_by_user_email(cls, email):
         queryDict = {'playerIds': email}
