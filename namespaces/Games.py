@@ -191,10 +191,7 @@ class CreateGames(Resource):
         
         userIdentity = get_jwt_identity()
         current_user = UserModel.load_user_by_id(userIdentity['id'])
-        
-        if not GameModel.load_game_by_name(args['gameName']) == None:
-            abort(make_response(jsonify(message='Game name: \'{}\' already exists.'.format(args['gameName'])), 409))
-        
+
         gameId = ObjectId()
         UtcStartDate = convert_to_utc(args['startDate'])
         UtcEndDate = convert_to_utc(args['endDate'])
@@ -399,12 +396,6 @@ class Game(Resource):
             abort(make_response(jsonify(message='Game ID: \'{}\' cannot be edited after the auction date: \'{}\''
                                         .format(existingGame._id, existingGame.auctionDate)), 403))
 
-        if args['gameName'].lower() != existingGame.gameNameLowerCase:
-            gameWithRequestedNewName = GameModel.load_game_by_name(args['gameName'])
-            if gameWithRequestedNewName:
-                abort(make_response(jsonify(message='Game name: \'{}\' already exists.'
-                                            .format(args['gameName'])), 409))
-        
         args['startDate'] = convert_to_utc(args['startDate'])
         args['endDate'] = convert_to_utc(args['endDate'])
         args['auctionDate'] = convert_to_utc(args['auctionDate'])
