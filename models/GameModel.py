@@ -11,7 +11,7 @@ from utilities.DatetimeHelper import convert_to_utc, string_format_date
 
 class GameModel():
     def __init__(self, id, gameName, gameNameLowerCase, startDate, endDate, auctionDate,
-                 dollarSpendingCap, movies, auctionItemsExpireInSeconds,
+                 dollarSpendingCap, minimumBid, movies, auctionItemsExpireInSeconds,
                  rules, commissionerId, playerIds, auctionComplete, auctionTimeIncrement = 7):
         self._id = id
         self.gameName = gameName
@@ -20,6 +20,7 @@ class GameModel():
         self.endDate = endDate
         self.auctionDate = auctionDate
         self.dollarSpendingCap = dollarSpendingCap
+        self.minimumBid = minimumBid
         self.movies = movies
         self.auctionItemsExpireInSeconds = auctionItemsExpireInSeconds
         self.rules = rules
@@ -45,6 +46,7 @@ class GameModel():
                                     'endDate': convert_to_utc(self.endDate),
                                     'auctionDate': convert_to_utc(self.auctionDate),
                                     'dollarSpendingCap': self.dollarSpendingCap,
+                                    'minimumBid': self.minimumBid,
                                     'movies': self.movies,
                                     'auctionItemsExpireInSeconds': self.auctionItemsExpireInSeconds,
                                     'rules': self.rules,
@@ -85,6 +87,7 @@ class GameModel():
                 endDate=string_format_date(game['endDate']),
                 auctionDate=string_format_date(game['auctionDate']),
                 dollarSpendingCap=game['dollarSpendingCap'],
+                minimumBid=game['minimumBid'],
                 movies=game['movies'],
                 auctionItemsExpireInSeconds=game['auctionItemsExpireInSeconds'],
                 rules=game['rules'],
@@ -108,6 +111,7 @@ class GameModel():
                     endDate=string_format_date(game['endDate']),
                     auctionDate=string_format_date(game['auctionDate']),
                     dollarSpendingCap=game['dollarSpendingCap'],
+                    minimumBid=game['minimumBid'],
                     movies=game['movies'],
                     auctionItemsExpireInSeconds=game['auctionItemsExpireInSeconds'],
                     rules=game['rules'],

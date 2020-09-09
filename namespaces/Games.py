@@ -41,6 +41,7 @@ gamePayload = games_namespace.model('GamePayload', {
         'endDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'auctionDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'dollarSpendingCap': fields.Integer,
+        'minimumBid': fields.Integer,
         'playerIds': fields.List(fields.String),
         'movies': fields.List(fields.String),
         'auctionItemsExpireInSeconds': fields.Integer,
@@ -89,6 +90,7 @@ games_namespace.model('Game', {
         'endDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'auctionDate': fields.DateTime(dt_format=u'%Y-%m-%dT%H:%M:%S.%f+00:00'),
         'dollarSpendingCap': fields.Integer,
+        'minimumBid': fields.Integer,
         'movies': fields.List(fields.Nested(movies_namespace.models['MovieModelFields'])),
         'auctionItemsExpireInSeconds': fields.Integer,
         'rules': fields.List(fields.Nested(rules_namespace.models['Rules'])),
@@ -183,6 +185,7 @@ class CreateGames(Resource):
         parser.add_argument('endDate', type=lambda x: arrow.get(x), required=True)
         parser.add_argument('auctionDate', type=lambda x: arrow.get(x), required=True)
         parser.add_argument('dollarSpendingCap', type=int, required=True)
+        parser.add_argument('minimumBid', type=int, required=True)
         parser.add_argument('playerIds', type=list, location='json', required=True)
         parser.add_argument('movies', type=list, location='json', required=True)
         parser.add_argument('auctionItemsExpireInSeconds', type=int, required=True)
@@ -233,6 +236,7 @@ class CreateGames(Resource):
                 endDate=UtcEndDate,
                 auctionDate=UtcAuctionDate,
                 dollarSpendingCap=args['dollarSpendingCap'],
+                minimumBid=args['minimumBid'],
                 movies=args['movies'],
                 auctionItemsExpireInSeconds=args['auctionItemsExpireInSeconds'],
                 rules=rulesArray,
@@ -374,6 +378,7 @@ class Game(Resource):
         parser.add_argument('endDate', type=lambda x: arrow.get(x), required=True)
         parser.add_argument('auctionDate', type=lambda x: arrow.get(x), required=True)
         parser.add_argument('dollarSpendingCap', type=int, required=True)
+        parser.add_argument('minimumBid', type=int, required=True)
         parser.add_argument('playerIds', type=list, location='json', required=True)
         parser.add_argument('movies', type=list, location='json', required=True)
         parser.add_argument('auctionItemsExpireInSeconds', type=int, required=True)
