@@ -126,6 +126,10 @@ class Bid(Resource):
             abort(make_response(jsonify(message='User ID: \'{}\' is not playing this game and can not make a bid.'.
                                         format(args['gameId'])), 403))
 
+        if args['bid'] < game.minimumBid:
+            abort(make_response(jsonify(message='Bid must be greater than or equal to minimum bid of ${}'.
+                                        format(game.minimumBid)), 400))
+
         if not MovieModel.load_movie_by_id(args['movieId']):
             abort(make_response(jsonify(message='Movie ID: \'{}\' could not be found.'.
                                         format(args['movieId'])), 404))
