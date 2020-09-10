@@ -123,7 +123,7 @@ for row in movieArray:
 
     movie = Movie(releaseDate, formattedTitle, releaseType, row[2], redirectMovieUrl, '', 0)
 
-    existingMovie = db.movies.find_one({'url': url})
+    existingMovie = db.movies.find_one({'$or': [{'url': url}, {'title': formattedTitle}]})
     if existingMovie:
         try:
             movie.domesticGross = existingMovie['domesticGross']
