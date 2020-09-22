@@ -98,11 +98,11 @@ for row in movieArray:
     
     releaseType = row[1][row[1].rfind('(')+1:row[1].rfind(')')].lower()
     
-    if releaseType != 'wide' and releaseType != 'imax' and releaseType != 'expands wide' and releaseType != 'canceled':
+    if releaseType != 'wide' and releaseType != 'expands wide' and releaseType != 'canceled':
         print('Skipping {} release of {}'.format(releaseType, title))
         continue
     
-    if releaseType == 'imax' or releaseType == 'expands wide':
+    if releaseType == 'expands wide':
         releaseType = 'wide'
 
     if releaseType == 'canceled':
