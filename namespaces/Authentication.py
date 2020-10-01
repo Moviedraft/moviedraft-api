@@ -108,7 +108,7 @@ class loginValidate(Resource):
         if not storedUser:
             userModel = UserModel(
                 id=ObjectId(),
-                userHandle=userEmail.split('@')[0],
+                userHandle=firstName,
                 firstName=firstName,
                 lastName=lastName,
                 email=userEmail,
