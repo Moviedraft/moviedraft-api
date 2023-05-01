@@ -1,7 +1,7 @@
 arrow==0.15.5
 boto3==1.14.56
 dnspython==1.16.0
-Flask==1.1.1
+Flask==2.3.2
 Flask-Executor==0.9.3
 Flask-JWT-Extended==3.24.1
 Flask-Mail==0.9.1
